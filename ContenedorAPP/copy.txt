@@ -991,8 +991,11 @@ def main():
 if __name__ == "__main__":
     main()
 
-
-
+----------------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
 
 quiero que El tamaño de los contenedores sea por selección, es decir, habrán 3 tipos de contenedores :  
 
@@ -1001,9 +1004,13 @@ quiero que El tamaño de los contenedores sea por selección, es decir, habrán 
 40 hight : su capacidad maxima será de 76,4 
 Otro : su capacidad maxima la pondrá el usuario 
 
-
+----------------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
 
 esto es pa poder entrar al repo
 
   git config --global user.email "luisfernnandomb@gmail.com"
-  git config --global user.name "mandrakhe"
+  git config --global user.name "mandrakhe"l
