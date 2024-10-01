@@ -198,7 +198,7 @@ class Interfaz:
             df_portafolio = None
             for header_row in [0, 1, 2, 3, 4]:
                 df_temp = pd.read_excel(
-                    "ContenedorAPP\Data_Base\PortafoliocompletointernacionalJulio2024.xlsx",
+                    "Data_Base\PortafoliocompletointernacionalJulio2024.xlsx",
                     header=header_row
                 )
                 df_temp.dropna(how='all', inplace=True)
@@ -471,7 +471,7 @@ class Interfaz:
             df_portafolio = None
             for header_row in [0, 1, 2, 3, 4]:
                 df_temp = pd.read_excel(
-                    "ContenedorAPP\Data_Base\PortafoliocompletointernacionalJulio2024.xlsx",
+                    "Data_Base\PortafoliocompletointernacionalJulio2024.xlsx",
                     header=header_row
                 )
                 df_temp.dropna(how='all', inplace=True)
