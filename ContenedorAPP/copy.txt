@@ -1003,7 +1003,7 @@ Otro : su capacidad maxima la pondrá el usuario
 
 
 
-
+esto es pa poder entrar al repo
 
   git config --global user.email "luisfernnandomb@gmail.com"
   git config --global user.name "mandrakhe"
