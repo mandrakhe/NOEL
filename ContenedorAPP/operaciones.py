@@ -1,5 +1,3 @@
-# operaciones.py
-
 import os
 from tkinter import ttk
 import pandas as pd
@@ -84,7 +82,7 @@ def exportar_a_excel(contenedores_volumenes, mensajes_contenedores, df_final, co
                     column_letter = get_column_letter(column_cells[0].column)
                     worksheet.column_dimensions[column_letter].width = adjusted_width
 
-                # ----------- MODIFICACIÓN PARA UBICAR LOS TOTALES EN Q Y R -----------
+                # ----------- MODIFICACIÓN PARA UBICAR LOS TOTALES EN COLUMNAS FIJAS -----------
                 # Definir las columnas fijas para los totales
                 total_label_col = 'N'
                 total_value_col = 'O'
@@ -166,9 +164,8 @@ def calcular_totales(df):
         'Total LibrUtiliz': total_librUtiliz
     }
 
-def calcular_contenedores(df, columnas_mapeadas):
-    capacidad_contenedor_min = 69
-    capacidad_contenedor_max = 71.5
+def calcular_contenedores(df, columnas_mapeadas, capacidad_contenedor_max):
+    capacidad_contenedor_min = capacidad_contenedor_max * 0.95  # Por ejemplo, 95% de la capacidad máxima
     contenedores_volumenes = []
     mensajes_contenedores = []
 
@@ -230,7 +227,7 @@ def calcular_contenedores(df, columnas_mapeadas):
 
     return contenedores_volumenes, mensajes_contenedores
 
-def mostrar_resultados(totales, contenedores, mensajes_contenedores, df_final, columnas_mapeadas):
+def mostrar_resultados(totales, contenedores, mensajes_contenedores, df_final, columnas_mapeadas, capacidad_contenedor_max):
     root = tk.Tk()
     root.title("Resultados de Contenedores")
     root.geometry("800x600")  # Ajuste del tamaño de la ventana
@@ -300,7 +297,7 @@ def mostrar_resultados(totales, contenedores, mensajes_contenedores, df_final, c
             for i in seleccionados:
                 mensaje_seleccionado = mensajes_contenedores[contenedor_index][i]
                 volumen_mensaje = df_final.loc[df_final[columnas_mapeadas['Texto de mensaje']] == mensaje_seleccionado, 'Volumen_LibrUtiliz'].values[0]
-                if contenedores[destino_index] + volumen_mensaje <= 71.5:
+                if contenedores[destino_index] + volumen_mensaje <= capacidad_contenedor_max:
                     volumen_a_transferir += volumen_mensaje
                     mensajes_a_transferir.append(mensaje_seleccionado)
                     contenedores[destino_index] += volumen_mensaje
