@@ -1,9 +1,8 @@
-Tengo este archivo.py
+archivo_excel.py 
 
 import tkinter as tk
 from tkinter import ttk, messagebox
 from operaciones import exportar_a_excel
-
 
 def mostrar_resultados(totales, contenedores, mensajes_contenedores, df_filtrado, columnas_mapeadas):
     root = tk.Tk()
@@ -14,40 +13,51 @@ def mostrar_resultados(totales, contenedores, mensajes_contenedores, df_filtrado
     frame_totales = tk.Frame(root)
     frame_totales.pack(pady=10)
 
-    tk.Label(frame_totales, text="Descripción", font=("Arial", 12, "bold")).grid(row=0, column=0)
-    tk.Label(frame_totales, text="Valor", font=("Arial", 12, "bold")).grid(row=0, column=1)
+    tk.Label(frame_totales, text="Descripción", font=(
+        "Arial", 12, "bold")).grid(row=0, column=0)
+    tk.Label(frame_totales, text="Valor", font=(
+        "Arial", 12, "bold")).grid(row=0, column=1)
 
     for i, (desc, valor) in enumerate(totales.items()):
-        tk.Label(frame_totales, text=desc, font=("Arial", 12)).grid(row=i+1, column=0)
-        tk.Label(frame_totales, text=str(valor), font=("Arial", 12)).grid(row=i+1, column=1)
+        tk.Label(frame_totales, text=desc, font=(
+            "Arial", 12)).grid(row=i+1, column=0)
+        tk.Label(frame_totales, text=str(valor), font=(
+            "Arial", 12)).grid(row=i+1, column=1)
 
     # Crear la tabla de contenedores
     frame_contenedores = tk.Frame(root)
     frame_contenedores.pack(pady=20)
 
-    tk.Label(frame_contenedores, text="Contenedores", font=("Arial", 14, "bold")).pack()
+    tk.Label(frame_contenedores, text="Contenedores",
+                font=("Arial", 14, "bold")).pack()
 
-    tree = ttk.Treeview(frame_contenedores, columns=("Peso"), show="headings", height=10)
+    tree = ttk.Treeview(frame_contenedores, columns=(
+        "Peso"), show="headings", height=10)
     tree.heading("Peso", text="Peso Neto")
     tree.column("Peso", width=300)  # Ajuste del ancho de la columna
     tree.pack(expand=True, fill='both')  # Ajuste para expandir el Treeview
 
     for i, contenedor in enumerate(contenedores):
-        tree.insert("", "end", iid=i, values=(f"Contenedor {i+1}: {contenedor:.2f} unidades de peso neto",))
+        tree.insert("", "end", iid=i, values=(
+            f"Contenedor {i+1}: {contenedor:.2f} unidades de peso neto",))
 
     def on_select(event):
         if not tree.selection():
-            return  # Si no hay ningún elemento seleccionado, salir de la función.
+            # Si no hay ningún elemento seleccionado, salir de la función.
+            return
 
         selected_item = tree.selection()[0]
         contenedor_index = int(selected_item)
 
         # Crear una nueva ventana para mostrar y mover los mensajes
         mensajes_ventana = tk.Toplevel(root)
-        mensajes_ventana.title(f"Mensajes para Contenedor {contenedor_index + 1}")
-        mensajes_ventana.geometry("600x400")  # Ajuste del tamaño de la ventana de mensajes
+        mensajes_ventana.title(f"Mensajes para Contenedor {
+                            contenedor_index + 1}")
+        # Ajuste del tamaño de la ventana de mensajes
+        mensajes_ventana.geometry("600x400")
 
-        mensajes_listbox = tk.Listbox(mensajes_ventana, selectmode=tk.MULTIPLE, width=50, height=10)
+        mensajes_listbox = tk.Listbox(
+            mensajes_ventana, selectmode=tk.MULTIPLE, width=50, height=10)
         mensajes_listbox.pack(pady=10)
 
         for mensaje in mensajes_contenedores[contenedor_index]:
@@ -60,7 +70,8 @@ def mostrar_resultados(totales, contenedores, mensajes_contenedores, df_filtrado
 
             destino_index = tk.simpledialog.askinteger(
                 "Transferir a Contenedor",
-                f"Seleccione el número del contenedor de destino (1-{len(contenedores)})",
+                f"Seleccione el número del contenedor de destino (1-{
+                    len(contenedores)})",
                 minvalue=1, maxvalue=len(contenedores)
             )
 
@@ -75,7 +86,8 @@ def mostrar_resultados(totales, contenedores, mensajes_contenedores, df_filtrado
             # Asumimos que cada mensaje tiene un peso específico
             for i in seleccionados:
                 mensaje_seleccionado = mensajes_contenedores[contenedor_index][i]
-                peso_mensaje = df_filtrado.loc[df_filtrado[columnas_mapeadas['Texto de mensaje']] == mensaje_seleccionado, 'Neto'].values[0]
+                peso_mensaje = df_filtrado.loc[df_filtrado[columnas_mapeadas['Texto de mensaje']]
+                                            == mensaje_seleccionado, 'Neto'].values[0]
                 if contenedores[destino_index] + peso_mensaje <= 71.5:
                     peso_a_transferir += peso_mensaje
                     mensajes_a_transferir.append(mensaje_seleccionado)
@@ -87,11 +99,13 @@ def mostrar_resultados(totales, contenedores, mensajes_contenedores, df_filtrado
             for mensaje in mensajes_a_transferir:
                 mensajes_contenedores[contenedor_index].remove(mensaje)
                 mensajes_contenedores[destino_index].append(mensaje)
-                contenedores[contenedor_index] -= df_filtrado.loc[df_filtrado[columnas_mapeadas['Texto de mensaje']] == mensaje, 'Neto'].values[0]
+                contenedores[contenedor_index] -= df_filtrado.loc[df_filtrado[columnas_mapeadas['Texto de mensaje']]
+                                                                == mensaje, 'Neto'].values[0]
 
             # Mostrar advertencia si se alcanzó el límite
             if mensajes_no_transferidos:
-                advertencia = f"No se pudieron transferir los siguientes mensajes porque se alcanzó el límite de peso del contenedor de destino:\n{', '.join(map(str, mensajes_no_transferidos))}"
+                advertencia = f"No se pudieron transferir los siguientes mensajes porque se alcanzó el límite de peso del contenedor de destino:\n{
+                    ', '.join(map(str, mensajes_no_transferidos))}"
                 messagebox.showwarning("Advertencia", advertencia)
 
             # Actualizar la interfaz
@@ -99,90 +113,72 @@ def mostrar_resultados(totales, contenedores, mensajes_contenedores, df_filtrado
             for mensaje in mensajes_contenedores[contenedor_index]:
                 mensajes_listbox.insert(tk.END, mensaje)
 
-            tree.item(selected_item, values=(f"Contenedor {contenedor_index + 1}: {contenedores[contenedor_index]:.2f} unidades de peso neto",))
-            tree.item(destino_index, values=(f"Contenedor {destino_index + 1}: {contenedores[destino_index]:.2f} unidades de peso neto",))
+            tree.item(selected_item, values=(f"Contenedor {
+                        contenedor_index + 1}: {contenedores[contenedor_index]:.2f} unidades de peso neto",))
+            tree.item(destino_index, values=(f"Contenedor {
+                        destino_index + 1}: {contenedores[destino_index]:.2f} unidades de peso neto",))
 
             # Si un contenedor queda vacío, poner su peso a 0
             if len(mensajes_contenedores[contenedor_index]) == 0:
                 contenedores[contenedor_index] = 0
 
-        tk.Button(mensajes_ventana, text="Transferir mensajes", command=transferir_mensajes).pack(pady=10)
+        tk.Button(mensajes_ventana, text="Transferir mensajes",
+                    command=transferir_mensajes).pack(pady=10)
 
     tree.bind("<<TreeviewSelect>>", on_select)
 
-    tk.Button(root, text="Exportar a Excel", command=lambda: exportar_a_excel(contenedores, mensajes_contenedores, df_filtrado, columnas_mapeadas)).pack(pady=10)
+    tk.Button(root, text="Exportar a Excel", command=lambda: exportar_a_excel(
+        contenedores, mensajes_contenedores, df_filtrado, columnas_mapeadas)).pack(pady=10)
 
     root.mainloop()
 
-    interfaz.py
-
-import pandas as pd
+    interfa.py
+    import pandas as pd
 import tkinter as tk
-from tkinter import messagebox, filedialog, ttk
+from tkinter import messagebox, filedialog, simpledialog
 from operaciones import calcular_totales, calcular_contenedores, mostrar_resultados
-import logging
-import traceback
 
 class Interfaz:
     def __init__(self):
-        # Configuración del logger
-        self.log_records = []
-        self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.DEBUG)
-
-        # Handler personalizado para almacenar registros en una lista
-        class ListHandler(logging.Handler):
-            def __init__(self, log_list):
-                logging.Handler.__init__(self)
-                self.log_list = log_list
-
-            def emit(self, record):
-                self.log_list.append(record)
-
-        list_handler = ListHandler(self.log_records)
-        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-        list_handler.setFormatter(formatter)
-        self.logger.addHandler(list_handler)
-
         self.root = tk.Tk()
         self.root.title("Subir archivo")
-        self.root.geometry("600x600")  # Ajustamos el tamaño de la ventana
+        self.root.geometry("600x750")  # Ajustamos el tamaño de la ventana
         self.root.configure(bg="#fff")
-        
+
         self.label = tk.Label(
             self.root, text="Por favor, suba su archivo:", bg="#fff",
             font=("Arial", 14)
         )
         self.label.pack(pady=10)
-        
+
         # Campo de entrada para buscar
         self.entry_buscar = tk.Entry(self.root, font=("Arial", 12))
         self.entry_buscar.pack(pady=5)
         self.entry_buscar.bind('<KeyRelease>', self.filtrar_datos)
-        
+
         # Listbox para mostrar 'Nombre'
         self.listbox_nombres = tk.Listbox(
             self.root, selectmode=tk.MULTIPLE, width=50, height=20, exportselection=0
         )
         self.listbox_nombres.pack(pady=10)
-        
+
         self.boton_subir = tk.Button(
             self.root, text="Subir archivo", command=self.subir_archivo,
             bg="#4caf50", fg="white", font=("Arial", 12)
         )
         self.boton_subir.pack(pady=10)
-        
+
         # Datos completos para el filtrado
         self.df_subido = pd.DataFrame()
         self.datos_filtrados = pd.DataFrame()
-        
+
         # Botón para buscar datos
         self.boton_buscar = tk.Button(
             self.root, text="Buscar datos", command=self.buscar_datos,
             bg="#2196f3", fg="white", font=("Arial", 12)
         )
         self.boton_buscar.pack(pady=10)
-        
+
         # Botón para procesar selección
         self.boton_procesar = tk.Button(
             self.root, text="Procesar selección", command=self.procesar_seleccion,
@@ -190,99 +186,59 @@ class Interfaz:
         )
         self.boton_procesar.pack(pady=10)
 
-        # Botón para ver registros
-        self.boton_ver_logs = tk.Button(
-            self.root, text="Ver registros", command=self.ver_logs,
-            bg="#2196f3", fg="white", font=("Arial", 12)
-        )
-        self.boton_ver_logs.pack(pady=10)
-    
-    def ver_logs(self):
-        log_window = tk.Toplevel(self.root)
-        log_window.title("Registros")
-        log_window.geometry("800x600")
+        # Variable para la capacidad del contenedor
+        self.capacidad_contenedor = tk.DoubleVar()
+        self.capacidad_contenedor.set(33.2)  # Valor por defecto para 20ft
 
-        text_widget = tk.Text(log_window)
-        text_widget.pack(expand=True, fill='both')
-
-        # Configurar tags para colorear según el nivel del registro
-        text_widget.tag_config('ERROR', foreground='red')
-        text_widget.tag_config('WARNING', foreground='orange')
-
-        # Mantener el índice del último registro mostrado
-        self.last_log_index = 0
-
-        def update_logs():
-            # Agregar nuevos registros
-            for record in self.log_records[self.last_log_index:]:
-                message = self.logger.handlers[0].formatter.format(record)
-                level = record.levelname
-                if level == 'ERROR':
-                    text_widget.insert(tk.END, message + '\n', 'ERROR')
-                elif level == 'WARNING':
-                    text_widget.insert(tk.END, message + '\n', 'WARNING')
-                else:
-                    text_widget.insert(tk.END, message + '\n')
-            self.last_log_index = len(self.log_records)
-            text_widget.see(tk.END)  # Desplazar hacia el final
-            log_window.after(1000, update_logs)  # Actualizar cada segundo
-
-        update_logs()
-    
     def subir_archivo(self):
-        self.logger.info("Subiendo archivo")
         archivo_path = filedialog.askopenfilename(
             title="Seleccionar archivo",
             filetypes=[("Archivos Excel", "*.xlsx")]
         )
         if archivo_path:
-            self.logger.info(f"Archivo seleccionado: {archivo_path}")
             self.cargar_datos(archivo_path)
-        else:
-            self.logger.warning("No se seleccionó ningún archivo.")
-    
+
     def cargar_datos(self, archivo_path):
         try:
-            self.logger.info(f"Cargando datos desde {archivo_path}")
             df_subido = pd.read_excel(archivo_path, header=0)
             df_subido.dropna(how='all', inplace=True)
             df_subido.columns = df_subido.columns.str.strip()
-            
+
             # Verificar si las columnas necesarias existen
             columnas_necesarias = ['Lote', 'Nombre', 'Cliente']
             for columna in columnas_necesarias:
                 if columna not in df_subido.columns:
-                    message = f"La columna '{columna}' no se encontró en el archivo."
-                    self.logger.error(message)
-                    messagebox.showerror("Error", message)
+                    messagebox.showerror(
+                        "Error",
+                        f"La columna '{columna}' no se encontró en el archivo."
+                    )
                     return
-            
+
             # Crear la columna 'Grupo' basada en la columna 'Lote'
             df_subido['Grupo'] = df_subido['Lote'].astype(str).apply(
                 lambda x: 'GCFOODS' if 'GZ' in x else 'NOEL'
             )
-            
+
             # Solicitar al usuario que seleccione los grupos
             self.seleccionar_grupo(df_subido)
-        
+
         except Exception as e:
-            self.logger.error("Error al cargar los datos", exc_info=True)
             messagebox.showerror("Error", f"Error al cargar los datos: {e}")
-    
+
     def seleccionar_grupo(self, df_subido):
         # Crear una nueva ventana para seleccionar los grupos
         grupo_window = tk.Toplevel(self.root)
         grupo_window.title("Seleccionar Grupo")
-        
+
         tk.Label(
             grupo_window, text="Seleccione el grupo de datos que desea procesar:",
             font=("Arial", 12)
         ).pack(pady=10)
-        
+
         # Variables para almacenar la selección
         self.grupo_gcfoods = tk.BooleanVar(value=True)
         self.grupo_noel = tk.BooleanVar(value=True)
-        
+
         # Checkbuttons para seleccionar GCFOODS y NOEL
         tk.Checkbutton(
             grupo_window, text="GCFOODS", variable=self.grupo_gcfoods
@@ -290,61 +246,55 @@ class Interfaz:
         tk.Checkbutton(
             grupo_window, text="NOEL", variable=self.grupo_noel
         ).pack()
-        
+
         def confirmar_seleccion():
             if not self.grupo_gcfoods.get() and not self.grupo_noel.get():
-                self.logger.warning("No se seleccionó ningún grupo.")
                 messagebox.showwarning(
                     "Advertencia", "Debe seleccionar al menos un grupo."
                 )
                 return
             grupo_window.destroy()
             self.mostrar_datos(df_subido)
-        
+
         tk.Button(
             grupo_window, text="Confirmar", command=confirmar_seleccion
         ).pack(pady=10)
-    
+
     def mostrar_datos(self, df_subido):
-        try:
-            # Filtrar df_subido según los grupos seleccionados
-            grupos_seleccionados = []
-            if self.grupo_gcfoods.get():
-                grupos_seleccionados.append('GCFOODS')
-            if self.grupo_noel.get():
-                grupos_seleccionados.append('NOEL')
-            
-            df_subido = df_subido[df_subido['Grupo'].isin(grupos_seleccionados)]
-            
-            # Modificar 'Lote' para el grupo GCFOODS
-            df_subido.loc[df_subido['Grupo'] == 'GCFOODS', 'Lote'] = (
-                '20' + df_subido.loc[df_subido['Grupo'] == 'GCFOODS', 'Lote'].astype(str)
-            )
-            
-            # Asegurar que las columnas clave sean de tipo string
-            df_subido['Lote'] = df_subido['Lote'].astype(str)
-            df_subido = df_subido.dropna(subset=['Nombre', 'Cliente'])
-            df_subido['Nombre'] = df_subido['Nombre'].astype(str).str.strip()
-            df_subido['Cliente'] = df_subido['Cliente'].astype(str).str.strip()
-            
-            # Almacenar los datos para el filtrado
-            self.df_subido = df_subido.copy()
-            self.datos_filtrados = pd.DataFrame(
-                {'Nombre': self.df_subido['Nombre'].unique()}
-            )
-            
-            # Mostrar todos los datos inicialmente
-            self.actualizar_listbox(self.datos_filtrados['Nombre'].tolist())
-            self.logger.info("Datos cargados y mostrados en la interfaz.")
-        except Exception as e:
-            self.logger.error("Error al mostrar los datos", exc_info=True)
-            messagebox.showerror("Error", f"Error al mostrar los datos: {e}")
-    
+        # Filtrar df_subido según los grupos seleccionados
+        grupos_seleccionados = []
+        if self.grupo_gcfoods.get():
+            grupos_seleccionados.append('GCFOODS')
+        if self.grupo_noel.get():
+            grupos_seleccionados.append('NOEL')
+
+        df_subido = df_subido[df_subido['Grupo'].isin(grupos_seleccionados)]
+
+        # Modificar 'Lote' para el grupo GCFOODS
+        df_subido.loc[df_subido['Grupo'] == 'GCFOODS', 'Lote'] = (
+            '20' + df_subido.loc[df_subido['Grupo'] == 'GCFOODS', 'Lote'].astype(str)
+        )
+
+        # Asegurar que las columnas clave sean de tipo string
+        df_subido['Lote'] = df_subido['Lote'].astype(str)
+        df_subido = df_subido.dropna(subset=['Nombre', 'Cliente'])
+        df_subido['Nombre'] = df_subido['Nombre'].astype(str).str.strip()
+        df_subido['Cliente'] = df_subido['Cliente'].astype(str).str.strip()
+
+        # Almacenar los datos para el filtrado
+        self.df_subido = df_subido.copy()
+        self.datos_filtrados = pd.DataFrame(
+            {'Nombre': self.df_subido['Nombre'].unique()}
+        )
+
+        # Mostrar todos los datos inicialmente
+        self.actualizar_listbox(self.datos_filtrados['Nombre'].tolist())
+
     def actualizar_listbox(self, lista_nombres):
         self.listbox_nombres.delete(0, tk.END)
         for nombre in lista_nombres:
             self.listbox_nombres.insert(tk.END, nombre)
-    
+
     def filtrar_datos(self, event):
         texto_busqueda = self.entry_buscar.get().lower()
         if texto_busqueda == '':
@@ -357,71 +307,100 @@ class Interfaz:
             ]
             nombres_filtrados = df_filtrado['Nombre'].unique()
         self.actualizar_listbox(nombres_filtrados)
-    
+
     def procesar_seleccion(self):
-        try:
-            # Obtener los nombres seleccionados en el Listbox
-            seleccionados = [
-                self.listbox_nombres.get(i) for i in self.listbox_nombres.curselection()
-            ]
-            
-            if not seleccionados:
-                self.logger.warning("No se seleccionó ningún elemento para procesar.")
+        # Obtener los nombres seleccionados en el Listbox
+        seleccionados = [
+            self.listbox_nombres.get(i) for i in self.listbox_nombres.curselection()
+        ]
+
+        if not seleccionados:
+            messagebox.showwarning(
+                "Advertencia",
+                "Debe seleccionar al menos un elemento para continuar."
+            )
+            return
+
+        # Filtrar df_subido según los nombres seleccionados
+        df_filtrado = self.df_subido[self.df_subido['Nombre'].isin(seleccionados)]
+
+        # Antes de procesar el archivo, seleccionar el tipo de contenedor
+        self.seleccionar_contenedor(df_filtrado)
+
+    def seleccionar_contenedor(self, df_filtrado):
+        # Crear una nueva ventana para seleccionar el tipo de contenedor
+        contenedor_window = tk.Toplevel(self.root)
+        contenedor_window.title("Seleccionar Tipo de Contenedor")
+
+        tk.Label(
+            contenedor_window, text="Seleccione el tipo de contenedor:", font=("Arial", 12)
+        ).pack(pady=10)
+
+        # Función para actualizar la capacidad según la selección
+        def actualizar_capacidad():
+            seleccion = opcion_seleccionada.get()
+            if seleccion == '20ft':
+                self.capacidad_contenedor.set(33.2)
+            elif seleccion == '40ft':
+                self.capacidad_contenedor.set(67.4)
+            elif seleccion == '40 high':
+                self.capacidad_contenedor.set(76.4)
+            elif seleccion == 'Otro':
+                # Pedir al usuario que ingrese la capacidad
+                capacidad = simpledialog.askfloat(
+                    "Capacidad del Contenedor",
+                    "Ingrese la capacidad máxima del contenedor:",
+                    minvalue=0.1
+                )
+                if capacidad:
+                    self.capacidad_contenedor.set(capacidad)
+                else:
+                    self.capacidad_contenedor.set(0)  # Valor por defecto si cancela
+            else:
+                self.capacidad_contenedor.set(0)
+
+        # Variable para la opción seleccionada
+        opcion_seleccionada = tk.StringVar()
+        opcion_seleccionada.set('20ft')  # Valor por defecto
+
+        # Opciones de contenedores
+        opciones = ['20ft', '40ft', '40 high', 'Otro']
+
+        for opcion in opciones:
+            tk.Radiobutton(
+                contenedor_window,
+                text=opcion,
+                variable=opcion_seleccionada,
+                value=opcion,
+                command=actualizar_capacidad
+            ).pack(anchor='w')
+
+        def confirmar_seleccion():
+            if self.capacidad_contenedor.get() <= 0:
                 messagebox.showwarning(
-                    "Advertencia",
-                    "Debe seleccionar al menos un elemento para continuar."
+                    "Advertencia", "Debe seleccionar un tipo de contenedor válido."
                 )
                 return
-            
-            # Filtrar df_subido según los nombres seleccionados
-            df_filtrado = self.df_subido[self.df_subido['Nombre'].isin(seleccionados)]
-            
-            # Mostrar los datos filtrados en una nueva ventana
-            self.mostrar_datos_seleccionados(df_filtrado)
-            
-            # Proceder a procesar el archivo
+            contenedor_window.destroy()
+            # Después de cerrar la ventana, procesar el archivo
             self.procesar_archivo(df_filtrado)
-        except Exception as e:
-            self.logger.error("Error al procesar la selección", exc_info=True)
-            messagebox.showerror("Error", f"Error al procesar la selección: {e}")
-    
-    def mostrar_datos_seleccionados(self, df_filtrado):
-        # Crear una nueva ventana para mostrar los datos
-        datos_window = tk.Toplevel(self.root)
-        datos_window.title("Datos Seleccionados")
-        datos_window.geometry("800x400")
-        
-        # Crear un Treeview para mostrar los datos
-        tree = ttk.Treeview(datos_window, show='headings')
-        tree.pack(expand=True, fill='both')
-        
-        # Definir las columnas
-        columnas = df_filtrado.columns.tolist()
-        tree['columns'] = columnas
-        
-        # Configurar encabezados
-        for col in columnas:
-            tree.heading(col, text=col)
-            tree.column(col, anchor='center')
-        
-        # Agregar los datos
-        for index, row in df_filtrado.iterrows():
-            values = [row[col] for col in columnas]
-            tree.insert('', tk.END, values=values)
-    
+
+        tk.Button(
+            contenedor_window, text="Confirmar", command=confirmar_seleccion
+        ).pack(pady=10)
+
     def procesar_archivo(self, df_filtrado):
         try:
-            self.logger.info("Procesando archivo...")
             columnas_necesarias = [
                 'Material', 'Texto de mensaje', 'Bruto', 'Neto', 'Volumen',
                 'Importe', 'Cliente', 'Nombre', 'Contador'  # Agregamos 'Contador'
             ]
-            
+
             # Intentar leer el archivo Portafolio con diferentes filas de encabezado
             df_portafolio = None
             for header_row in [0, 1, 2, 3, 4]:
                 df_temp = pd.read_excel(
-                    "Data_Base/PortafoliocompletointernacionalJulio2024.xlsx",
+                    "Data_Base\PortafoliocompletointernacionalJulio2024.xlsx",
                     header=header_row
                 )
                 df_temp.dropna(how='all', inplace=True)
@@ -429,12 +408,12 @@ class Interfaz:
                 if any(col in df_temp.columns for col in columnas_necesarias):
                     df_portafolio = df_temp
                     break
-            
+
             if df_portafolio is None:
                 raise ValueError(
                     "No se encontraron las columnas necesarias en el portafolio."
                 )
-            
+                
             # Mapear las columnas
             def find_closest_column(column_name, df_columns):
                 for col in df_columns:
@@ -444,7 +423,7 @@ class Interfaz:
                     if column_name.lower() in col.lower():
                         return col
                 return None
-            
+
             columnas_mapeadas = {}
             for columna in columnas_necesarias:
                 columna_encontrada = find_closest_column(columna, df_portafolio.columns)
@@ -456,8 +435,23 @@ class Interfaz:
                             f"No se encontró una columna similar a '{columna}' "
                             "en el portafolio."
                         )
-            
-            # Asegurar que las columnas clave sean de tipo string y sin espacios
+
+            # Verificar y eliminar valores nulos en las columnas clave
+            df_filtrado.dropna(
+                subset=['Material', 'Texto breve material', 'Cliente', 'Nombre'],
+                inplace=True
+            )
+            df_portafolio.dropna(
+                subset=[
+                    columnas_mapeadas['Material'],
+                    columnas_mapeadas['Texto de mensaje'],
+                    columnas_mapeadas['Cliente'],
+                    columnas_mapeadas['Nombre']
+                ],
+                inplace=True
+            )
+
+            # Convertir las columnas clave a string y eliminar espacios en blanco
             claves_filtrado = ['Material', 'Texto breve material', 'Cliente', 'Nombre']
             claves_portafolio = [
                 columnas_mapeadas['Material'],
@@ -465,28 +459,33 @@ class Interfaz:
                 columnas_mapeadas['Cliente'],
                 columnas_mapeadas['Nombre']
             ]
-            
+
             for col in claves_filtrado:
                 df_filtrado[col] = df_filtrado[col].astype(str).str.strip()
             for col in claves_portafolio:
                 df_portafolio[col] = df_portafolio[col].astype(str).str.strip()
-            
-            # Realizar el merge usando 'left' para mantener todas las filas de df_filtrado
+
+            # Realizar el merge
             df_resultado = pd.merge(
                 df_filtrado,
                 df_portafolio[list(columnas_mapeadas.values())],
                 left_on=claves_filtrado,
                 right_on=claves_portafolio,
-                how='left',
+                how='inner',
                 suffixes=('_filtrado', '_portafolio')
             )
-            
-            # Ya no eliminamos duplicados
-            # df_resultado.drop_duplicates(...)
-            
-            # Columnas adicionales del archivo subido
+
+            if df_resultado.empty:
+                messagebox.showerror(
+                    "Error",
+                    "No se encontraron coincidencias entre los archivos."
+                )
+                return
+
+
+            # Columnas adicionales que queremos agregar del archivo subido
             columnas_adicionales = ['Doc.comer.', 'LibrUtiliz', 'Grupo', 'Lote']
-            
+
             # Determinar el nombre correcto de las columnas adicionales
             columnas_adicionales_encontradas = []
             for col_adicional in columnas_adicionales:
@@ -495,205 +494,181 @@ class Interfaz:
                 elif col_adicional in df_resultado.columns:
                     columnas_adicionales_encontradas.append(col_adicional)
                 else:
-                    message = f"'{col_adicional}' no se encontró en los datos."
-                    self.logger.warning(message)
-                    messagebox.showwarning("Advertencia", message)
-            
+                    messagebox.showwarning(
+                        "Advertencia",
+                        f"'{col_adicional}' no se encontró en los datos."
+                    )
+
             # Filtrar las columnas necesarias
             columnas_para_df_final = list(columnas_mapeadas.values()) + \
                 columnas_adicionales_encontradas
             df_final = df_resultado[columnas_para_df_final]
-            
+
             # Renombrar las columnas adicionales
             columnas_renombradas = {}
             for col in columnas_adicionales_encontradas:
                 if '_filtrado' in col:
                     columnas_renombradas[col] = col.replace('_filtrado', '')
             df_final.rename(columns=columnas_renombradas, inplace=True)
-            
-            # Manejar valores nulos después del merge
-            # Rellenar valores nulos en las columnas numéricas con 0
+
+            # Eliminar comas y convertir a numérico
             for col in ['Bruto', 'Neto', 'Volumen', 'Importe']:
                 df_final[col] = df_final[col].replace({',': ''}, regex=True)
                 df_final[col] = pd.to_numeric(df_final[col], errors='coerce').fillna(0)
-            
+
             # Convertir 'LibrUtiliz' a numérico si no lo es
             if 'LibrUtiliz' in df_final.columns:
                 df_final['LibrUtiliz'] = pd.to_numeric(
                     df_final['LibrUtiliz'], errors='coerce'
-                ).fillna(1)
-            else:
-                df_final['LibrUtiliz'] = 1  # Si no existe, inicializar con 1
-            
-            # Si 'Contador' no existe, inicializar con 1
-            if 'Contador' in df_final.columns:
-                df_final['Contador'] = pd.to_numeric(
-                    df_final['Contador'], errors='coerce'
-                ).fillna(1)
-            else:
-                df_final['Contador'] = 1  # Si no existe, inicializar con 1
-            
+                ).fillna(0)
+
             # Calcular totales y contenedores
             totales = calcular_totales(df_final)
             total_neto = totales.get("Total peso Neto", 0)
-            
+
             if total_neto == 0:
                 raise ValueError(
                     "No se pudo calcular el Total peso Neto. Verifica los valores."
                 )
-            
+
             contenedores_pesos, mensajes_contenedores = calcular_contenedores(
-                df_final, columnas_mapeadas
+                df_final, columnas_mapeadas, self.capacidad_contenedor.get()
             )
-            
+
             mostrar_resultados(
                 totales, contenedores_pesos, mensajes_contenedores,
-                df_final, columnas_mapeadas
+                df_final, columnas_mapeadas, self.capacidad_contenedor.get()
             )
-            self.logger.info("Archivo procesado correctamente.")
-        
+
         except Exception as e:
-            self.logger.error("Error procesando el archivo", exc_info=True)
             messagebox.showerror("Error", f"Error procesando el archivo: {e}")
-    
+
     def buscar_datos(self):
-        try:
-            # Obtener los nombres seleccionados en el Listbox
-            seleccionados = [
-                self.listbox_nombres.get(i) for i in self.listbox_nombres.curselection()
-            ]
-            
-            if not seleccionados:
-                self.logger.warning("No se seleccionó ningún nombre para buscar.")
-                messagebox.showwarning(
-                    "Advertencia",
-                    "Debe seleccionar al menos un nombre en la lista para buscar."
-                )
-                return
-            
-            # Si hay múltiples nombres seleccionados, tomaremos el primero
-            nombre_seleccionado = seleccionados[0]
-            
-            # Ventana para ingresar los datos de búsqueda
-            input_window = tk.Toplevel(self.root)
-            input_window.title("Buscar datos")
-            
-            tk.Label(
-                input_window, text="Material:", font=("Arial", 12)
-            ).grid(row=0, column=0, padx=10, pady=5)
-            material_entry = tk.Entry(input_window, font=("Arial", 12))
-            material_entry.grid(row=0, column=1, padx=10, pady=5)
-            
-            # Mostrar el nombre seleccionado
-            tk.Label(
-                input_window, text=f"Nombre seleccionado: {nombre_seleccionado}",
-                font=("Arial", 12)
-            ).grid(row=1, column=0, columnspan=2, padx=10, pady=5)
-            
-            tk.Button(
-                input_window, text="Buscar",
-                command=lambda: self.realizar_busqueda(
-                    material_entry.get(),
-                    nombre_seleccionado,
-                    input_window
-                ),
-                bg="#4caf50", fg="white", font=("Arial", 12)
-            ).grid(row=2, column=0, columnspan=2, pady=10)
-        except Exception as e:
-            self.logger.error("Error al iniciar la búsqueda", exc_info=True)
-            messagebox.showerror("Error", f"Error al iniciar la búsqueda: {e}")
-    
-    def realizar_busqueda(self, material, nombre, input_window):
-        try:
-            # Mantener abierta la ventana de búsqueda
-            # input_window.destroy()
-            
-            # Cargar el portafolio
-            df_portafolio, columnas_mapeadas = self.cargar_portafolio()
-            
-            if df_portafolio is None:
-                return  # Error ya mostrado en cargar_portafolio
-            
-            # Asegurarse de que las columnas son cadenas y eliminar espacios
-            df_portafolio[columnas_mapeadas['Material']] = df_portafolio[
-                columnas_mapeadas['Material']
-            ].astype(str).str.strip()
-            df_portafolio[columnas_mapeadas['Nombre']] = df_portafolio[
-                columnas_mapeadas['Nombre']
-            ].astype(str).str.strip()
-            df_portafolio[columnas_mapeadas['Texto de mensaje']] = df_portafolio[
-                columnas_mapeadas['Texto de mensaje']
-            ].astype(str).str.strip()
-            df_portafolio[columnas_mapeadas['Cliente']] = df_portafolio[
-                columnas_mapeadas['Cliente']
-            ].astype(str).str.strip()
-            
-            # Realizar la búsqueda
-            mask = (
-                (df_portafolio[columnas_mapeadas['Material']] == material.strip()) &
-                (df_portafolio[columnas_mapeadas['Nombre']] == nombre.strip())
+        # Obtener los nombres seleccionados en el Listbox
+        seleccionados = [
+            self.listbox_nombres.get(i) for i in self.listbox_nombres.curselection()
+        ]
+
+        if not seleccionados:
+            messagebox.showwarning(
+                "Advertencia",
+                "Debe seleccionar al menos un nombre en la lista para buscar."
             )
-            df_resultado = df_portafolio[mask]
-            
-            if df_resultado.empty:
-                self.logger.info("Búsqueda sin resultados.")
-                messagebox.showinfo(
-                    "Sin resultados",
-                    "No se encontraron coincidencias con los datos ingresados."
-                )
-            else:
-                # Copiar los datos al portapapeles en formato Excel
-                columnas_a_mostrar = [
-                    'Material', 'Texto de mensaje', 'Bruto', 'Neto', 'Volumen',
-                    'Importe', 'Cliente', 'Nombre', 'Contador'
-                ]
-                self.copiar_al_portapapeles(df_resultado, columnas_mapeadas, columnas_a_mostrar)
-                self.logger.info("Datos encontrados y copiados al portapapeles.")
-        except Exception as e:
-            self.logger.error("Error al realizar la búsqueda", exc_info=True)
-            messagebox.showerror("Error", f"Error al realizar la búsqueda: {e}")
-    
+            return
+
+        # Si hay múltiples nombres seleccionados, tomaremos el primero
+        nombre_seleccionado = seleccionados[0]
+
+        # Ventana para ingresar los datos de búsqueda
+        input_window = tk.Toplevel(self.root)
+        input_window.title("Buscar datos")
+
+        tk.Label(
+            input_window, text="Material:", font=("Arial", 12)
+        ).grid(row=0, column=0, padx=10, pady=5)
+        material_entry = tk.Entry(input_window, font=("Arial", 12))
+        material_entry.grid(row=0, column=1, padx=10, pady=5)
+
+        # Mostrar el nombre seleccionado
+        tk.Label(
+            input_window, text=f"Nombre seleccionado: {nombre_seleccionado}",
+            font=("Arial", 12)
+        ).grid(row=1, column=0, columnspan=2, padx=10, pady=5)
+
+        tk.Button(
+            input_window, text="Buscar",
+            command=lambda: self.realizar_busqueda(
+                material_entry.get(),
+                nombre_seleccionado,
+                input_window
+            ),
+            bg="#4caf50", fg="white", font=("Arial", 12)
+        ).grid(row=2, column=0, columnspan=2, pady=10)
+
+    def realizar_busqueda(self, material, nombre, input_window):
+        # Mantener abierta la ventana de búsqueda
+        # input_window.destroy()
+
+        # Cargar el portafolio
+        df_portafolio, columnas_mapeadas = self.cargar_portafolio()
+
+        if df_portafolio is None:
+            return  # Error ya mostrado en cargar_portafolio
+
+        # Asegurarse de que las columnas son cadenas y eliminar espacios
+        df_portafolio[columnas_mapeadas['Material']] = df_portafolio[
+            columnas_mapeadas['Material']
+        ].astype(str).str.strip()
+        df_portafolio[columnas_mapeadas['Nombre']] = df_portafolio[
+            columnas_mapeadas['Nombre']
+        ].astype(str).str.strip()
+        df_portafolio[columnas_mapeadas['Texto de mensaje']] = df_portafolio[
+            columnas_mapeadas['Texto de mensaje']
+        ].astype(str).str.strip()
+        df_portafolio[columnas_mapeadas['Cliente']] = df_portafolio[
+            columnas_mapeadas['Cliente']
+        ].astype(str).str.strip()
+
+        # Realizar la búsqueda
+        mask = (
+            (df_portafolio[columnas_mapeadas['Material']] == material.strip()) &
+            (df_portafolio[columnas_mapeadas['Nombre']] == nombre.strip())
+        )
+        df_resultado = df_portafolio[mask]
+
+        if df_resultado.empty:
+            messagebox.showinfo(
+                "Sin resultados",
+                "No se encontraron coincidencias con los datos ingresados."
+            )
+        else:
+            # Copiar los datos al portapapeles en formato Excel
+            columnas_a_mostrar = [
+                'Material', 'Texto de mensaje', 'Bruto', 'Neto', 'Volumen',
+                'Importe', 'Cliente', 'Nombre', 'Contador'
+            ]
+            self.copiar_al_portapapeles(df_resultado, columnas_mapeadas, columnas_a_mostrar)
+
     def copiar_al_portapapeles(self, df_resultado, columnas_mapeadas, columnas_a_copiar):
         # Obtener los datos en el orden de las columnas
         datos = df_resultado[[columnas_mapeadas[col] for col in columnas_a_copiar]].copy()
-        
+
         # Formatear números con comas en lugar de puntos
         def format_number_with_comma(x):
             try:
                 return ('{0:.3f}'.format(float(x))).replace('.', ',')
             except:
                 return x
-        
+
         for col in ['Bruto', 'Neto', 'Volumen', 'Importe']:
             mapped_col = columnas_mapeadas.get(col)
             if mapped_col in datos.columns:
                 datos[mapped_col] = datos[mapped_col].apply(format_number_with_comma)
-        
+
         # Convertir los datos a texto separado por tabulaciones
         datos_string = datos.to_csv(sep='\t', index=False, header=False)
-        
+
         # Copiar al portapapeles
         self.root.clipboard_clear()
         self.root.clipboard_append(datos_string)
-        
+
         messagebox.showinfo(
             "Datos copiados",
             "Los datos han sido copiados al portapapeles en formato Excel."
         )
-    
+
     def cargar_portafolio(self):
         try:
-            self.logger.info("Cargando portafolio...")
             columnas_necesarias = [
                 'Material', 'Texto de mensaje', 'Bruto', 'Neto', 'Volumen',
                 'Importe', 'Cliente', 'Nombre', 'Contador'
             ]
-            
+
             # Intentar leer el archivo con diferentes filas de encabezado
             df_portafolio = None
             for header_row in [0, 1, 2, 3, 4]:
                 df_temp = pd.read_excel(
-                    "Data_Base/PortafoliocompletointernacionalJulio2024.xlsx",
+                    "Data_Base\PortafoliocompletointernacionalJulio2024.xlsx",
                     header=header_row
                 )
                 df_temp.dropna(how='all', inplace=True)
@@ -701,12 +676,12 @@ class Interfaz:
                 if any(col in df_temp.columns for col in columnas_necesarias):
                     df_portafolio = df_temp
                     break
-            
+
             if df_portafolio is None:
                 raise ValueError(
                     "No se encontraron las columnas necesarias en el portafolio."
                 )
-            
+
             # Mapear las columnas
             def find_closest_column(column_name, df_columns):
                 for col in df_columns:
@@ -728,215 +703,31 @@ class Interfaz:
                             f"No se encontró una columna similar a '{columna}' "
                             "en el portafolio."
                         )
-            
-            self.logger.info("Portafolio cargado correctamente.")
+
             return df_portafolio, columnas_mapeadas
         except Exception as e:
-            self.logger.error("Error al cargar el portafolio", exc_info=True)
             messagebox.showerror("Error", f"Error al cargar el portafolio: {e}")
             return None, None
-    
 
-
-    
-    def buscar_datos(self):
-        try:
-            # Obtener los nombres seleccionados en el Listbox
-            seleccionados = [
-                self.listbox_nombres.get(i) for i in self.listbox_nombres.curselection()
-            ]
-            
-            if not seleccionados:
-                self.logger.warning("No se seleccionó ningún nombre para buscar.")
-                messagebox.showwarning(
-                    "Advertencia",
-                    "Debe seleccionar al menos un nombre en la lista para buscar."
-                )
-                return
-            
-            # Si hay múltiples nombres seleccionados, tomaremos el primero
-            nombre_seleccionado = seleccionados[0]
-            
-            # Ventana para ingresar los datos de búsqueda
-            input_window = tk.Toplevel(self.root)
-            input_window.title("Buscar datos")
-            
-            tk.Label(
-                input_window, text="Material:", font=("Arial", 12)
-            ).grid(row=0, column=0, padx=10, pady=5)
-            material_entry = tk.Entry(input_window, font=("Arial", 12))
-            material_entry.grid(row=0, column=1, padx=10, pady=5)
-            
-            # Mostrar el nombre seleccionado
-            tk.Label(
-                input_window, text=f"Nombre seleccionado: {nombre_seleccionado}",
-                font=("Arial", 12)
-            ).grid(row=1, column=0, columnspan=2, padx=10, pady=5)
-            
-            tk.Button(
-                input_window, text="Buscar",
-                command=lambda: self.realizar_busqueda(
-                    material_entry.get(),
-                    nombre_seleccionado,
-                    input_window
-                ),
-                bg="#4caf50", fg="white", font=("Arial", 12)
-            ).grid(row=2, column=0, columnspan=2, pady=10)
-        except Exception as e:
-            self.logger.error("Error al iniciar la búsqueda", exc_info=True)
-            messagebox.showerror("Error", f"Error al iniciar la búsqueda: {e}")
-    
-    def realizar_busqueda(self, material, nombre, input_window):
-        try:
-            # Mantener abierta la ventana de búsqueda
-            # input_window.destroy()
-            
-            # Cargar el portafolio
-            df_portafolio, columnas_mapeadas = self.cargar_portafolio()
-            
-            if df_portafolio is None:
-                return  # Error ya mostrado en cargar_portafolio
-            
-            # Asegurarse de que las columnas son cadenas y eliminar espacios
-            df_portafolio[columnas_mapeadas['Material']] = df_portafolio[
-                columnas_mapeadas['Material']
-            ].astype(str).str.strip()
-            df_portafolio[columnas_mapeadas['Nombre']] = df_portafolio[
-                columnas_mapeadas['Nombre']
-            ].astype(str).str.strip()
-            df_portafolio[columnas_mapeadas['Texto de mensaje']] = df_portafolio[
-                columnas_mapeadas['Texto de mensaje']
-            ].astype(str).str.strip()
-            df_portafolio[columnas_mapeadas['Cliente']] = df_portafolio[
-                columnas_mapeadas['Cliente']
-            ].astype(str).str.strip()
-            
-            # Realizar la búsqueda
-            mask = (
-                (df_portafolio[columnas_mapeadas['Material']] == material.strip()) &
-                (df_portafolio[columnas_mapeadas['Nombre']] == nombre.strip())
-            )
-            df_resultado = df_portafolio[mask]
-            
-            if df_resultado.empty:
-                self.logger.info("Búsqueda sin resultados.")
-                messagebox.showinfo(
-                    "Sin resultados",
-                    "No se encontraron coincidencias con los datos ingresados."
-                )
-            else:
-                # Copiar los datos al portapapeles en formato Excel
-                columnas_a_mostrar = [
-                    'Material', 'Texto de mensaje', 'Bruto', 'Neto', 'Volumen',
-                    'Importe', 'Cliente', 'Nombre', 'Contador'
-                ]
-                self.copiar_al_portapapeles(df_resultado, columnas_mapeadas, columnas_a_mostrar)
-                self.logger.info("Datos encontrados y copiados al portapapeles.")
-        except Exception as e:
-            self.logger.error("Error al realizar la búsqueda", exc_info=True)
-            messagebox.showerror("Error", f"Error al realizar la búsqueda: {e}")
-    
-    def copiar_al_portapapeles(self, df_resultado, columnas_mapeadas, columnas_a_copiar):
-        # Obtener los datos en el orden de las columnas
-        datos = df_resultado[[columnas_mapeadas[col] for col in columnas_a_copiar]].copy()
-        
-        # Formatear números con comas en lugar de puntos
-        def format_number_with_comma(x):
-            try:
-                return ('{0:.3f}'.format(float(x))).replace('.', ',')
-            except:
-                return x
-        
-        for col in ['Bruto', 'Neto', 'Volumen', 'Importe']:
-            mapped_col = columnas_mapeadas.get(col)
-            if mapped_col in datos.columns:
-                datos[mapped_col] = datos[mapped_col].apply(format_number_with_comma)
-        
-        # Convertir los datos a texto separado por tabulaciones
-        datos_string = datos.to_csv(sep='\t', index=False, header=False)
-        
-        # Copiar al portapapeles
-        self.root.clipboard_clear()
-        self.root.clipboard_append(datos_string)
-        
-        messagebox.showinfo(
-            "Datos copiados",
-            "Los datos han sido copiados al portapapeles en formato Excel."
-        )
-    
-    def cargar_portafolio(self):
-        try:
-            self.logger.info("Cargando portafolio...")
-            columnas_necesarias = [
-                'Material', 'Texto de mensaje', 'Bruto', 'Neto', 'Volumen',
-                'Importe', 'Cliente', 'Nombre', 'Contador'
-            ]
-            
-            # Intentar leer el archivo con diferentes filas de encabezado
-            df_portafolio = None
-            for header_row in [0, 1, 2, 3, 4]:
-                df_temp = pd.read_excel(
-                    "Data_Base/PortafoliocompletointernacionalJulio2024.xlsx",
-                    header=header_row
-                )
-                df_temp.dropna(how='all', inplace=True)
-                df_temp.columns = df_temp.columns.str.strip()
-                if any(col in df_temp.columns for col in columnas_necesarias):
-                    df_portafolio = df_temp
-                    break
-            
-            if df_portafolio is None:
-                raise ValueError(
-                    "No se encontraron las columnas necesarias en el portafolio."
-                )
-            
-            # Mapear las columnas
-            def find_closest_column(column_name, df_columns):
-                for col in df_columns:
-                    if column_name.lower() == col.lower():
-                        return col
-                for col in df_columns:
-                    if column_name.lower() in col.lower():
-                        return col
-                return None
-
-            columnas_mapeadas = {}
-            for columna in columnas_necesarias:
-                columna_encontrada = find_closest_column(columna, df_portafolio.columns)
-                if columna_encontrada:
-                    columnas_mapeadas[columna] = columna_encontrada
-                else:
-                    if columna != 'Contador':
-                        raise ValueError(
-                            f"No se encontró una columna similar a '{columna}' "
-                            "en el portafolio."
-                        )
-            
-            self.logger.info("Portafolio cargado correctamente.")
-            return df_portafolio, columnas_mapeadas
-        except Exception as e:
-            self.logger.error("Error al cargar el portafolio", exc_info=True)
-            messagebox.showerror("Error", f"Error al cargar el portafolio: {e}")
-            return None, None
-    
     def run(self):
         self.root.mainloop()
 
-operaciones.py
 
-import os
+        operaciones.py
+
+        import os
 from tkinter import ttk
 import pandas as pd
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, simpledialog
 from openpyxl.styles import Font, PatternFill
 from natsort import natsort_keygen
 from openpyxl.utils import get_column_letter
-import logging
 
-def exportar_a_excel(contenedores_volumenes, mensajes_contenedores, df_final, columnas_mapeadas):
+
+def exportar_a_excel(contenedores_volumenes, mensajes_contenedores, df_final, columnas_mapeadas, capacidad_contenedor_max):
     try:
-        logging.info("Exportando a Excel")
+
         # Obtener la ruta del escritorio dependiendo del sistema operativo
         if os.name == 'nt':  # Para Windows
             desktop_path = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
@@ -961,36 +752,41 @@ def exportar_a_excel(contenedores_volumenes, mensajes_contenedores, df_final, co
         # Guardar el archivo en el escritorio
         with pd.ExcelWriter(filepath, engine='openpyxl') as writer:
             for i, (volumen_contenedor, mensajes) in enumerate(zip(contenedores_volumenes, mensajes_contenedores)):
-                # Filtrar los datos del contenedor actual
-                df_contenedor = df_final[df_final[columnas_mapeadas['Texto de mensaje']].isin(mensajes)].copy()
+                # Filtrar los datos del contenedor actual utilizando índices únicos
+                df_contenedor = df_final.loc[mensajes].copy()
 
                 # Asegurar que las columnas sean numéricas
-                df_contenedor['Bruto'] = pd.to_numeric(df_contenedor['Bruto'], errors='coerce').fillna(0)
-                df_contenedor['Neto'] = pd.to_numeric(df_contenedor['Neto'], errors='coerce').fillna(0)
-                df_contenedor['Volumen'] = pd.to_numeric(df_contenedor['Volumen'], errors='coerce').fillna(0)
-                df_contenedor['Importe'] = pd.to_numeric(df_contenedor['Importe'], errors='coerce').fillna(0)
-                df_contenedor['LibrUtiliz'] = pd.to_numeric(df_contenedor['LibrUtiliz'], errors='coerce').fillna(1)
-                df_contenedor['Contador'] = pd.to_numeric(df_contenedor['Contador'], errors='coerce').fillna(1)
+                for col in ['Bruto', 'Neto', 'Volumen', 'Importe', 'LibrUtiliz', 'Contador']:
+                    if col in df_contenedor.columns:
+                        df_contenedor[col] = pd.to_numeric(df_contenedor[col], errors='coerce').fillna(0)
 
                 # Asegurar que las columnas 'Lote' y 'Doc.comer.' sean de tipo string
-                df_contenedor['Lote'] = df_contenedor['Lote'].astype(str)
-                df_contenedor['Doc.comer.'] = df_contenedor['Doc.comer.'].astype(str)
+                if 'Lote' in df_contenedor.columns:
+                    df_contenedor['Lote'] = df_contenedor['Lote'].astype(str)
+                if 'Doc.comer.' in df_contenedor.columns:
+                    df_contenedor['Doc.comer.'] = df_contenedor['Doc.comer.'].astype(str)
 
                 # Crear una clave de ordenación natural para 'Lote'
-                df_contenedor['Lote_sort_key'] = df_contenedor['Lote'].map(natsort_key)
+                if 'Lote' in df_contenedor.columns:
+                    df_contenedor['Lote_sort_key'] = df_contenedor['Lote'].map(natsort_key)
 
-                # Ordenar df_contenedor por 'Doc.comer.' y luego por 'Lote' utilizando natsort
-                df_contenedor.sort_values(by=['Doc.comer.', 'Lote_sort_key'], inplace=True)
+                    # Ordenar df_contenedor por 'Doc.comer.' y luego por 'Lote' utilizando natsort
+                    df_contenedor.sort_values(by=['Doc.comer.', 'Lote_sort_key'], inplace=True)
 
-                # Eliminar la columna auxiliar 'Lote_sort_key'
-                df_contenedor.drop(columns=['Lote_sort_key'], inplace=True)
+                    # Eliminar la columna auxiliar 'Lote_sort_key'
+                    df_contenedor.drop(columns=['Lote_sort_key'], inplace=True)
 
                 # Excluir 'Volumen_LibrUtiliz' y 'Color_Volumen' del export
                 columns_to_export = [col for col in df_contenedor.columns if col not in ['Volumen_LibrUtiliz', 'Color_Volumen']]
 
+                # Verificar que 'Nombre' esté incluido
+                if 'Nombre' not in columns_to_export:
+                    columns_to_export.append('Nombre')
+
                 # Guardar los datos del contenedor en una hoja de Excel sin las columnas excluidas
                 hoja_nombre = f'Contenedor_{i+1}'
                 df_contenedor[columns_to_export].to_excel(writer, sheet_name=hoja_nombre, index=False)
+                print(f"Exportando {len(df_contenedor)} filas al archivo Excel en la hoja '{hoja_nombre}'.")
 
                 # Obtener el libro y la hoja de trabajo
                 workbook = writer.book
@@ -1006,7 +802,7 @@ def exportar_a_excel(contenedores_volumenes, mensajes_contenedores, df_final, co
                     column_letter = get_column_letter(column_cells[0].column)
                     worksheet.column_dimensions[column_letter].width = adjusted_width
 
-                # ----------- MODIFICACIÓN PARA UBICAR LOS TOTALES EN COLUMNAS ESPECÍFICAS -----------
+                # ----------- MODIFICACIÓN PARA UBICAR LOS TOTALES EN Q Y R -----------
                 # Definir las columnas fijas para los totales
                 total_label_col = 'N'
                 total_value_col = 'O'
@@ -1016,7 +812,7 @@ def exportar_a_excel(contenedores_volumenes, mensajes_contenedores, df_final, co
 
                 # Escribir los títulos de los totales
                 total_names = ['Total peso Bruto', 'Total peso Neto', 'Total Volumen', 'Total Importe', 'Total LibrUtiliz']
-                totals_start_row = 2  # Comenzamos en la fila 2, debajo del encabezado
+                totals_start_row = df_contenedor.shape[0] + 2  # Espacio debajo de los datos
                 for idx, total_name in enumerate(total_names):
                     cell_row = totals_start_row + idx
                     worksheet[f'{total_label_col}{cell_row}'] = total_name
@@ -1032,7 +828,7 @@ def exportar_a_excel(contenedores_volumenes, mensajes_contenedores, df_final, co
 
                 # Definir el rango de las fórmulas desde la fila 2 hasta la última fila con datos
                 start_row = 2
-                end_row = df_contenedor.shape[0] + 1  # +1 porque Excel empieza en 1
+                end_row = 100
 
                 # Escribir las fórmulas de los totales
                 # Total peso Bruto: SUMPRODUCT(Bruto * LibrUtiliz)
@@ -1058,381 +854,27 @@ def exportar_a_excel(contenedores_volumenes, mensajes_contenedores, df_final, co
                     if hasattr(row, 'Color_Volumen') and getattr(row, 'Color_Volumen') == 'yellow':
                         worksheet[f'{volumen_col_letter}{idx}'].fill = fill_yellow
 
-        # Mensaje de éxito
-        messagebox.showinfo("Exportación exitosa", f"Los contenedores se han exportado a '{filename}' en el escritorio.")
-        logging.info(f"Exportación exitosa: '{filename}'")
+        # Verificar que todas las filas hayan sido exportadas
+        filas_exportadas = sum(len(mensajes) for mensajes in mensajes_contenedores)
+        total_filas = df_final.shape[0]
+        if filas_exportadas != total_filas:
+            messagebox.showerror("Error de Exportación", f"Se han exportado {filas_exportadas} filas, pero el total es {total_filas}.")
+            print(f"⚠️ Error de Exportación: Se han exportado {filas_exportadas} filas, pero el total es {total_filas}.")
+        else:
+            print("✅ Todas las filas han sido exportadas correctamente a Excel.")
+            messagebox.showinfo("Exportación exitosa", f"Los contenedores se han exportado a '{filename}' en el escritorio.")
+            print(f"Exportación completada: {filename}")
+
     except Exception as e:
-        logging.error("Error de Exportación", exc_info=True)
         messagebox.showerror("Error de Exportación", f"Ocurrió un error al exportar: {e}")
-
-def calcular_totales(df):
-    try:
-        logging.info("Calculando totales")
-        # Asegurar que las columnas sean numéricas
-        df['Bruto'] = pd.to_numeric(df['Bruto'], errors='coerce').fillna(0)
-        df['Neto'] = pd.to_numeric(df['Neto'], errors='coerce').fillna(0)
-        df['Volumen'] = pd.to_numeric(df['Volumen'], errors='coerce').fillna(0)
-        df['Importe'] = pd.to_numeric(df['Importe'], errors='coerce').fillna(0)
-        df['LibrUtiliz'] = pd.to_numeric(df['LibrUtiliz'], errors='coerce').fillna(1)
-        df['Contador'] = pd.to_numeric(df['Contador'], errors='coerce').fillna(1)
-
-        # Calcular totales multiplicando por 'LibrUtiliz' donde corresponda
-        total_bruto = round((df['Bruto'] * df['LibrUtiliz']).sum(), 2)
-        total_neto = round((df['Neto'] * df['LibrUtiliz']).sum(), 2)
-        total_volumen = round((df['Volumen'] * df['LibrUtiliz']).sum(), 2)
-        total_importe = round((df['Importe'] * df['Contador'] * df['LibrUtiliz']).sum(), 2)
-        total_librUtiliz = round(df['LibrUtiliz'].sum(), 2)
-
-        logging.info("Totales calculados correctamente.")
-        return {
-            'Total peso Bruto': total_bruto,
-            'Total peso Neto': total_neto,
-            'Total Volumen': total_volumen,
-            'Total Importe': total_importe,
-            'Total LibrUtiliz': total_librUtiliz
-        }
-    except Exception as e:
-        logging.error("Error al calcular totales", exc_info=True)
-        raise
-
-def calcular_contenedores(df, columnas_mapeadas):
-    try:
-        logging.info("Calculando contenedores")
-        capacidad_contenedor_min = 69
-        capacidad_contenedor_max = 71.5
-        contenedores_volumenes = []
-        mensajes_contenedores = []
-
-        # Crear una nueva columna 'Volumen_LibrUtiliz'
-        df['Volumen_LibrUtiliz'] = df['Volumen'] * df['LibrUtiliz']
-        df['Color_Volumen'] = ''
-
-        # Inicializar variables
-        current_container = []
-        cumulative_vol = 0
-
-        for index, row in df.iterrows():
-            vol_lib_util = row['Volumen_LibrUtiliz']
-            mensaje = row[columnas_mapeadas['Texto de mensaje']]
-
-            if vol_lib_util > capacidad_contenedor_max:
-                # Marcar la fila para colorear
-                df.at[index, 'Color_Volumen'] = 'yellow'
-                # Incluir la fila en su propio contenedor
-                contenedores_volumenes.append(vol_lib_util)
-                mensajes_contenedores.append([mensaje])
-                continue
-
-            elif capacidad_contenedor_min <= vol_lib_util <= capacidad_contenedor_max:
-                # La fila forma un contenedor por sí sola
-                contenedores_volumenes.append(vol_lib_util)
-                mensajes_contenedores.append([mensaje])
-                continue
-
-            else:  # vol_lib_util < capacidad_contenedor_min
-                if cumulative_vol + vol_lib_util <= capacidad_contenedor_max:
-                    # Agregar a contenedor actual
-                    current_container.append(mensaje)
-                    cumulative_vol += vol_lib_util
-                    if capacidad_contenedor_min <= cumulative_vol <= capacidad_contenedor_max:
-                        # Finalizar contenedor actual
-                        contenedores_volumenes.append(cumulative_vol)
-                        mensajes_contenedores.append(current_container)
-                        current_container = []
-                        cumulative_vol = 0
-                else:
-                    # No se puede agregar a contenedor actual
-                    if capacidad_contenedor_min <= cumulative_vol <= capacidad_contenedor_max:
-                        # Finalizar contenedor actual
-                        contenedores_volumenes.append(cumulative_vol)
-                        mensajes_contenedores.append(current_container)
-                        # Iniciar nuevo contenedor con la fila actual
-                        current_container = [mensaje]
-                        cumulative_vol = vol_lib_util
-                    else:
-                        # Iniciar nuevo contenedor con la fila actual
-                        current_container = [mensaje]
-                        cumulative_vol = vol_lib_util
-
-        # Si hay un contenedor actual al final, agregarlo
-        if current_container:
-            contenedores_volumenes.append(cumulative_vol)
-            mensajes_contenedores.append(current_container)
-
-        logging.info("Contenedores calculados correctamente.")
-        return contenedores_volumenes, mensajes_contenedores
-    except Exception as e:
-        logging.error("Error al calcular contenedores", exc_info=True)
-        raise
-
-def mostrar_resultados(totales, contenedores, mensajes_contenedores, df_final, columnas_mapeadas):
-    try:
-        logging.info("Mostrando resultados")
-        root = tk.Tk()
-        root.title("Resultados de Contenedores")
-        root.geometry("800x600")  # Ajuste del tamaño de la ventana
-
-        # Mostrar la tabla de totales
-        frame_totales = tk.Frame(root)
-        frame_totales.pack(pady=10)
-
-        tk.Label(frame_totales, text="Descripción", font=("Arial", 12, "bold")).grid(row=0, column=0)
-        tk.Label(frame_totales, text="Valor", font=("Arial", 12, "bold")).grid(row=0, column=1)
-
-        for i, (desc, valor) in enumerate(totales.items()):
-            tk.Label(frame_totales, text=desc, font=("Arial", 12)).grid(row=i+1, column=0)
-            tk.Label(frame_totales, text=str(valor), font=("Arial", 12)).grid(row=i+1, column=1)
-
-        # Crear la tabla de contenedores
-        frame_contenedores = tk.Frame(root)
-        frame_contenedores.pack(pady=20)
-
-        tk.Label(frame_contenedores, text="Contenedores", font=("Arial", 14, "bold")).pack()
-
-        tree = ttk.Treeview(frame_contenedores, columns=("Volumen"), show="headings", height=10)
-        tree.heading("Volumen", text="Volumen Total")
-        tree.column("Volumen", width=300)  # Ajuste del ancho de la columna
-        tree.pack(expand=True, fill='both')  # Ajuste para expandir el Treeview
-
-        for i, contenedor in enumerate(contenedores):
-            tree.insert("", "end", iid=i, values=(f"Contenedor {i+1}: {contenedor:.2f} unidades de volumen",))
-
-        def on_select(event):
-            if not tree.selection():
-                return  # Si no hay ningún elemento seleccionado, salir de la función.
-
-            selected_item = tree.selection()[0]
-            contenedor_index = int(selected_item)
-
-            # Crear una nueva ventana para mostrar los datos del contenedor
-            datos_ventana = tk.Toplevel(root)
-            datos_ventana.title(f"Datos del Contenedor {contenedor_index + 1}")
-            datos_ventana.geometry("800x400")
-
-            # Obtener los mensajes (identificadores) del contenedor
-            mensajes_contenedor = mensajes_contenedores[contenedor_index]
-
-            # Filtrar el dataframe para obtener las filas correspondientes
-            df_contenedor = df_final[df_final[columnas_mapeadas['Texto de mensaje']].isin(mensajes_contenedor)]
-
-            # Crear un Treeview para mostrar los datos
-            tree_contenedor = ttk.Treeview(datos_ventana, show='headings')
-            tree_contenedor.pack(expand=True, fill='both')
-
-            # Definir las columnas
-            columnas = df_contenedor.columns.tolist()
-            tree_contenedor['columns'] = columnas
-
-            # Configurar encabezados
-            for col in columnas:
-                tree_contenedor.heading(col, text=col)
-                tree_contenedor.column(col, anchor='center')
-
-            # Agregar los datos
-            for index, row in df_contenedor.iterrows():
-                values = [row[col] for col in columnas]
-                tree_contenedor.insert('', tk.END, values=values)
-
-        tree.bind("<<TreeviewSelect>>", on_select)
-
-        tk.Button(root, text="Exportar a Excel", command=lambda: exportar_a_excel(contenedores, mensajes_contenedores, df_final, columnas_mapeadas)).pack(pady=10)
-
-        root.mainloop()
-        logging.info("Resultados mostrados correctamente.")
-    except Exception as e:
-        logging.error("Error al mostrar resultados", exc_info=True)
-        messagebox.showerror("Error", f"Error al mostrar resultados: {e}")
-
-
-
-
-def calcular_totales(df):
-    try:
-        logging.info("Calculando totales")
-        # Asegurar que las columnas sean numéricas
-        df['Bruto'] = pd.to_numeric(df['Bruto'], errors='coerce').fillna(0)
-        df['Neto'] = pd.to_numeric(df['Neto'], errors='coerce').fillna(0)
-        df['Volumen'] = pd.to_numeric(df['Volumen'], errors='coerce').fillna(0)
-        df['Importe'] = pd.to_numeric(df['Importe'], errors='coerce').fillna(0)
-        df['LibrUtiliz'] = pd.to_numeric(df['LibrUtiliz'], errors='coerce').fillna(1)
-        df['Contador'] = pd.to_numeric(df['Contador'], errors='coerce').fillna(1)
-
-        # Calcular totales multiplicando por 'LibrUtiliz' donde corresponda
-        total_bruto = round((df['Bruto'] * df['LibrUtiliz']).sum(), 2)
-        total_neto = round((df['Neto'] * df['LibrUtiliz']).sum(), 2)
-        total_volumen = round((df['Volumen'] * df['LibrUtiliz']).sum(), 2)
-        total_importe = round((df['Importe'] * df['Contador'] * df['LibrUtiliz']).sum(), 2)
-        total_librUtiliz = round(df['LibrUtiliz'].sum(), 2)
-
-        logging.info("Totales calculados correctamente.")
-        return {
-            'Total peso Bruto': total_bruto,
-            'Total peso Neto': total_neto,
-            'Total Volumen': total_volumen,
-            'Total Importe': total_importe,
-            'Total LibrUtiliz': total_librUtiliz
-        }
-    except Exception as e:
-        logging.error("Error al calcular totales", exc_info=True)
-        raise
-
-def calcular_contenedores(df, columnas_mapeadas):
-    try:
-        logging.info("Calculando contenedores")
-        capacidad_contenedor_min = 69
-        capacidad_contenedor_max = 71.5
-        contenedores_volumenes = []
-        mensajes_contenedores = []
-
-        # Crear una nueva columna 'Volumen_LibrUtiliz'
-        df['Volumen_LibrUtiliz'] = df['Volumen'] * df['LibrUtiliz']
-        df['Color_Volumen'] = ''
-
-        # Inicializar variables
-        current_container = []
-        cumulative_vol = 0
-
-        for index, row in df.iterrows():
-            vol_lib_util = row['Volumen_LibrUtiliz']
-            mensaje = row[columnas_mapeadas['Texto de mensaje']]
-
-            if vol_lib_util > capacidad_contenedor_max:
-                # Marcar la fila para colorear
-                df.at[index, 'Color_Volumen'] = 'yellow'
-                # Incluir la fila en su propio contenedor
-                contenedores_volumenes.append(vol_lib_util)
-                mensajes_contenedores.append([mensaje])
-                continue
-
-            elif capacidad_contenedor_min <= vol_lib_util <= capacidad_contenedor_max:
-                # La fila forma un contenedor por sí sola
-                contenedores_volumenes.append(vol_lib_util)
-                mensajes_contenedores.append([mensaje])
-                continue
-
-            else:  # vol_lib_util < capacidad_contenedor_min
-                if cumulative_vol + vol_lib_util <= capacidad_contenedor_max:
-                    # Agregar a contenedor actual
-                    current_container.append(mensaje)
-                    cumulative_vol += vol_lib_util
-                    if capacidad_contenedor_min <= cumulative_vol <= capacidad_contenedor_max:
-                        # Finalizar contenedor actual
-                        contenedores_volumenes.append(cumulative_vol)
-                        mensajes_contenedores.append(current_container)
-                        current_container = []
-                        cumulative_vol = 0
-                else:
-                    # No se puede agregar a contenedor actual
-                    if capacidad_contenedor_min <= cumulative_vol <= capacidad_contenedor_max:
-                        # Finalizar contenedor actual
-                        contenedores_volumenes.append(cumulative_vol)
-                        mensajes_contenedores.append(current_container)
-                        # Iniciar nuevo contenedor con la fila actual
-                        current_container = [mensaje]
-                        cumulative_vol = vol_lib_util
-                    else:
-                        # Iniciar nuevo contenedor con la fila actual
-                        current_container = [mensaje]
-                        cumulative_vol = vol_lib_util
-
-        # Si hay un contenedor actual al final, agregarlo
-        if current_container:
-            contenedores_volumenes.append(cumulative_vol)
-            mensajes_contenedores.append(current_container)
-
-        logging.info("Contenedores calculados correctamente.")
-        return contenedores_volumenes, mensajes_contenedores
-    except Exception as e:
-        logging.error("Error al calcular contenedores", exc_info=True)
-        raise
-
-def mostrar_resultados(totales, contenedores, mensajes_contenedores, df_final, columnas_mapeadas):
-    try:
-        logging.info("Mostrando resultados")
-        root = tk.Tk()
-        root.title("Resultados de Contenedores")
-        root.geometry("800x600")  # Ajuste del tamaño de la ventana
-
-        # Mostrar la tabla de totales
-        frame_totales = tk.Frame(root)
-        frame_totales.pack(pady=10)
-
-        tk.Label(frame_totales, text="Descripción", font=("Arial", 12, "bold")).grid(row=0, column=0)
-        tk.Label(frame_totales, text="Valor", font=("Arial", 12, "bold")).grid(row=0, column=1)
-
-        for i, (desc, valor) in enumerate(totales.items()):
-            tk.Label(frame_totales, text=desc, font=("Arial", 12)).grid(row=i+1, column=0)
-            tk.Label(frame_totales, text=str(valor), font=("Arial", 12)).grid(row=i+1, column=1)
-
-        # Crear la tabla de contenedores
-        frame_contenedores = tk.Frame(root)
-        frame_contenedores.pack(pady=20)
-
-        tk.Label(frame_contenedores, text="Contenedores", font=("Arial", 14, "bold")).pack()
-
-        tree = ttk.Treeview(frame_contenedores, columns=("Volumen"), show="headings", height=10)
-        tree.heading("Volumen", text="Volumen Total")
-        tree.column("Volumen", width=300)  # Ajuste del ancho de la columna
-        tree.pack(expand=True, fill='both')  # Ajuste para expandir el Treeview
-
-        for i, contenedor in enumerate(contenedores):
-            tree.insert("", "end", iid=i, values=(f"Contenedor {i+1}: {contenedor:.2f} unidades de volumen",))
-
-        def on_select(event):
-            if not tree.selection():
-                return  # Si no hay ningún elemento seleccionado, salir de la función.
-
-            selected_item = tree.selection()[0]
-            contenedor_index = int(selected_item)
-
-            # Crear una nueva ventana para mostrar los datos del contenedor
-            datos_ventana = tk.Toplevel(root)
-            datos_ventana.title(f"Datos del Contenedor {contenedor_index + 1}")
-            datos_ventana.geometry("800x400")
-
-            # Obtener los mensajes (identificadores) del contenedor
-            mensajes_contenedor = mensajes_contenedores[contenedor_index]
-
-            # Filtrar el dataframe para obtener las filas correspondientes
-            df_contenedor = df_final[df_final[columnas_mapeadas['Texto de mensaje']].isin(mensajes_contenedor)]
-
-            # Crear un Treeview para mostrar los datos
-            tree_contenedor = ttk.Treeview(datos_ventana, show='headings')
-            tree_contenedor.pack(expand=True, fill='both')
-
-            # Definir las columnas
-            columnas = df_contenedor.columns.tolist()
-            tree_contenedor['columns'] = columnas
-
-            # Configurar encabezados
-            for col in columnas:
-                tree_contenedor.heading(col, text=col)
-                tree_contenedor.column(col, anchor='center')
-
-            # Agregar los datos
-            for index, row in df_contenedor.iterrows():
-                values = [row[col] for col in columnas]
-                tree_contenedor.insert('', tk.END, values=values)
-
-        tree.bind("<<TreeviewSelect>>", on_select)
-
-        tk.Button(root, text="Exportar a Excel", command=lambda: exportar_a_excel(contenedores, mensajes_contenedores, df_final, columnas_mapeadas)).pack(pady=10)
-
-        root.mainloop()
-        logging.info("Resultados mostrados correctamente.")
-    except Exception as e:
-        logging.error("Error al mostrar resultados", exc_info=True)
-        messagebox.showerror("Error", f"Error al mostrar resultados: {e}")
+        print(f"Error durante la exportación: {e}")
 
 
 def calcular_totales(df):
     # Asegurar que las columnas sean numéricas
-    df['Bruto'] = pd.to_numeric(df['Bruto'], errors='coerce').fillna(0)
-    df['Neto'] = pd.to_numeric(df['Neto'], errors='coerce').fillna(0)
-    df['Volumen'] = pd.to_numeric(df['Volumen'], errors='coerce').fillna(0)
-    df['Importe'] = pd.to_numeric(df['Importe'], errors='coerce').fillna(0)
-    df['LibrUtiliz'] = pd.to_numeric(df['LibrUtiliz'], errors='coerce').fillna(0)
-    df['Contador'] = pd.to_numeric(df['Contador'], errors='coerce').fillna(0)
+    for col in ['Bruto', 'Neto', 'Volumen', 'Importe', 'LibrUtiliz', 'Contador']:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
 
     # Calcular totales multiplicando por 'LibrUtiliz' donde corresponda
     total_bruto = round((df['Bruto'] * df['LibrUtiliz']).sum(), 2)
@@ -1449,9 +891,13 @@ def calcular_totales(df):
         'Total LibrUtiliz': total_librUtiliz
     }
 
-def calcular_contenedores(df, columnas_mapeadas):
-    capacidad_contenedor_min = 69
-    capacidad_contenedor_max = 71.5
+
+def calcular_contenedores(df, columnas_mapeadas, capacidad_contenedor_max):
+    # Ordenar el DataFrame por la columna 'Lote' de menor a mayor
+    df['Lote'] = pd.to_numeric(df['Lote'], errors='coerce')  # Aseguramos que la columna Lote sea numérica
+    df = df.sort_values(by='Lote')
+
+    # Inicializar listas de contenedores y mensajes
     contenedores_volumenes = []
     mensajes_contenedores = []
 
@@ -1462,82 +908,87 @@ def calcular_contenedores(df, columnas_mapeadas):
     # Inicializar variables
     current_container = []
     cumulative_vol = 0
+    total_rows = df.shape[0]
+    processed_rows = 0
 
     for index, row in df.iterrows():
+        processed_rows += 1
         vol_lib_util = row['Volumen_LibrUtiliz']
-        mensaje = row[columnas_mapeadas['Texto de mensaje']]
+        mensaje = index  # Usar el índice único como identificador
 
+        # Si el volumen del mensaje excede la capacidad, creamos un contenedor para él solo
         if vol_lib_util > capacidad_contenedor_max:
             # Marcar la fila para colorear
             df.at[index, 'Color_Volumen'] = 'yellow'
             # Incluir la fila en su propio contenedor
             contenedores_volumenes.append(vol_lib_util)
             mensajes_contenedores.append([mensaje])
+            print(f"Fila {processed_rows}/{total_rows} asignada a Contenedor individual por exceso de volumen.")
             continue
 
-        elif capacidad_contenedor_min <= vol_lib_util <= capacidad_contenedor_max:
-            # La fila forma un contenedor por sí sola
-            contenedores_volumenes.append(vol_lib_util)
-            mensajes_contenedores.append([mensaje])
-            continue
+        # Si el mensaje no cabe en el contenedor actual, llenamos el contenedor y empezamos uno nuevo
+        if cumulative_vol + vol_lib_util > capacidad_contenedor_max:
+            # Finalizar contenedor actual
+            if current_container:
+                contenedores_volumenes.append(cumulative_vol)
+                mensajes_contenedores.append(current_container)
+                print(f"Contenedor finalizado con volumen total: {cumulative_vol:.2f}")
 
-        else:  # vol_lib_util < capacidad_contenedor_min
-            if cumulative_vol + vol_lib_util <= capacidad_contenedor_max:
-                # Agregar a contenedor actual
-                current_container.append(mensaje)
-                cumulative_vol += vol_lib_util
-                if capacidad_contenedor_min <= cumulative_vol <= capacidad_contenedor_max:
-                    # Finalizar contenedor actual
-                    contenedores_volumenes.append(cumulative_vol)
-                    mensajes_contenedores.append(current_container)
-                    current_container = []
-                    cumulative_vol = 0
-            else:
-                # No se puede agregar a contenedor actual
-                if capacidad_contenedor_min <= cumulative_vol <= capacidad_contenedor_max:
-                    # Finalizar contenedor actual
-                    contenedores_volumenes.append(cumulative_vol)
-                    mensajes_contenedores.append(current_container)
-                    # Iniciar nuevo contenedor con la fila actual
-                    current_container = [mensaje]
-                    cumulative_vol = vol_lib_util
-                else:
-                    # Iniciar nuevo contenedor con la fila actual
-                    current_container = [mensaje]
-                    cumulative_vol = vol_lib_util
+            # Iniciar un nuevo contenedor con la fila actual
+            current_container = [mensaje]
+            cumulative_vol = vol_lib_util
+            print(f"Fila {processed_rows}/{total_rows} iniciando un nuevo Contenedor. Volumen: {cumulative_vol:.2f}")
+        else:
+            # Agregar a contenedor actual
+            current_container.append(mensaje)
+            cumulative_vol += vol_lib_util
+            print(f"Fila {processed_rows}/{total_rows} agregada al Contenedor actual. Volumen acumulado: {cumulative_vol:.2f}")
 
     # Si hay un contenedor actual al final, agregarlo
     if current_container:
         contenedores_volumenes.append(cumulative_vol)
         mensajes_contenedores.append(current_container)
+        print(f"Último Contenedor finalizado con volumen total: {cumulative_vol:.2f}")
+
+    print(f"Total de filas procesadas: {processed_rows}/{total_rows}")
+    print(f"Total de contenedores creados: {len(contenedores_volumenes)}")
+
+    # Validar que todas las filas hayan sido asignadas a algún contenedor
+    filas_asignadas = sum(len(mensajes) for mensajes in mensajes_contenedores)
+    if filas_asignadas != total_rows:
+        print(f"⚠️ Error: Se han asignado {filas_asignadas} filas, pero el total es {total_rows}.")
+    else:
+        print("✅ Todas las filas han sido asignadas correctamente a contenedores.")
 
     return contenedores_volumenes, mensajes_contenedores
 
-def mostrar_resultados(totales, contenedores, mensajes_contenedores, df_final, columnas_mapeadas):
+
+
+def mostrar_resultados(totales, contenedores, mensajes_contenedores, df_final, columnas_mapeadas, capacidad_contenedor_max):
     root = tk.Tk()
     root.title("Resultados de Contenedores")
-    root.geometry("800x600")  # Ajuste del tamaño de la ventana
+    root.geometry("1000x700")  # Ajuste del tamaño de la ventana
 
     # Mostrar la tabla de totales
     frame_totales = tk.Frame(root)
     frame_totales.pack(pady=10)
 
-    tk.Label(frame_totales, text="Descripción", font=("Arial", 12, "bold")).grid(row=0, column=0)
-    tk.Label(frame_totales, text="Valor", font=("Arial", 12, "bold")).grid(row=0, column=1)
+    tk.Label(frame_totales, text="Descripción", font=("Arial", 12, "bold")).grid(row=0, column=0, padx=10, pady=5)
+    tk.Label(frame_totales, text="Valor", font=("Arial", 12, "bold")).grid(row=0, column=1, padx=10, pady=5)
 
     for i, (desc, valor) in enumerate(totales.items()):
-        tk.Label(frame_totales, text=desc, font=("Arial", 12)).grid(row=i+1, column=0)
-        tk.Label(frame_totales, text=str(valor), font=("Arial", 12)).grid(row=i+1, column=1)
+        tk.Label(frame_totales, text=desc, font=("Arial", 12)).grid(row=i+1, column=0, sticky='w', padx=10, pady=2)
+        tk.Label(frame_totales, text=str(valor), font=("Arial", 12)).grid(row=i+1, column=1, sticky='w', padx=10, pady=2)
 
     # Crear la tabla de contenedores
     frame_contenedores = tk.Frame(root)
-    frame_contenedores.pack(pady=20)
+    frame_contenedores.pack(pady=20, fill='both', expand=True)
 
     tk.Label(frame_contenedores, text="Contenedores", font=("Arial", 14, "bold")).pack()
 
-    tree = ttk.Treeview(frame_contenedores, columns=("Volumen"), show="headings", height=10)
+    tree = ttk.Treeview(frame_contenedores, columns=("Volumen"), show="headings", height=20)
     tree.heading("Volumen", text="Volumen Total")
-    tree.column("Volumen", width=300)  # Ajuste del ancho de la columna
+    tree.column("Volumen", width=600, anchor='center')  # Ajuste del ancho de la columna
     tree.pack(expand=True, fill='both')  # Ajuste para expandir el Treeview
 
     for i, contenedor in enumerate(contenedores):
@@ -1553,58 +1004,69 @@ def mostrar_resultados(totales, contenedores, mensajes_contenedores, df_final, c
         # Crear una nueva ventana para mostrar y mover los mensajes
         mensajes_ventana = tk.Toplevel(root)
         mensajes_ventana.title(f"Mensajes para Contenedor {contenedor_index + 1}")
-        mensajes_ventana.geometry("600x400")  # Ajuste del tamaño de la ventana de mensajes
+        mensajes_ventana.geometry("800x500")  # Ajuste del tamaño de la ventana de mensajes
 
-        mensajes_listbox = tk.Listbox(mensajes_ventana, selectmode=tk.MULTIPLE, width=50, height=10)
-        mensajes_listbox.pack(pady=10)
+        mensajes_listbox = tk.Listbox(mensajes_ventana, selectmode=tk.MULTIPLE, width=100, height=25)
+        mensajes_listbox.pack(pady=10, padx=10, fill='both', expand=True)
 
-        for mensaje in mensajes_contenedores[contenedor_index]:
-            mensajes_listbox.insert(tk.END, mensaje)
+        # Obtener los mensajes (índices únicos) y mostrarlos con detalles
+        for mensaje_idx in mensajes_contenedores[contenedor_index]:
+            texto_mensaje = df_final.loc[mensaje_idx, 'Texto de mensaje']
+            nombre = df_final.loc[mensaje_idx, 'Nombre']
+            mensajes_listbox.insert(tk.END, f"{texto_mensaje} (Nombre: {nombre})")
 
         def transferir_mensajes():
             seleccionados = list(mensajes_listbox.curselection())
             if not seleccionados:
+                messagebox.showwarning("Sin Selección", "No se ha seleccionado ningún mensaje para transferir.")
                 return
 
-            destino_index = tk.simpledialog.askinteger(
+            destino_index = simpledialog.askinteger(
                 "Transferir a Contenedor",
                 f"Seleccione el número del contenedor de destino (1-{len(contenedores)})",
                 minvalue=1, maxvalue=len(contenedores)
             )
 
-            if destino_index is None or destino_index == contenedor_index + 1:
+            if destino_index is None:
+                return  # Cancelado por el usuario
+            if destino_index == contenedor_index + 1:
+                messagebox.showwarning("Selección Inválida", "El contenedor de destino no puede ser el mismo que el de origen.")
                 return
 
-            destino_index -= 1
+            destino_index -= 1  # Ajustar al índice basado en 0
             volumen_a_transferir = 0
             mensajes_a_transferir = []
             mensajes_no_transferidos = []
 
+            # Asumimos que cada mensaje tiene un volumen específico
             for i in seleccionados:
-                mensaje_seleccionado = mensajes_contenedores[contenedor_index][i]
-                volumen_mensaje = df_final.loc[df_final[columnas_mapeadas['Texto de mensaje']] == mensaje_seleccionado, 'Volumen_LibrUtiliz'].values[0]
-                if contenedores[destino_index] + volumen_mensaje <= 71.5:
+                mensaje_seleccionado_idx = mensajes_contenedores[contenedor_index][i]
+                volumen_mensaje = df_final.loc[mensaje_seleccionado_idx, 'Volumen_LibrUtiliz']
+                if contenedores[destino_index] + volumen_mensaje <= capacidad_contenedor_max:
                     volumen_a_transferir += volumen_mensaje
-                    mensajes_a_transferir.append(mensaje_seleccionado)
+                    mensajes_a_transferir.append(mensaje_seleccionado_idx)
                     contenedores[destino_index] += volumen_mensaje
                 else:
-                    mensajes_no_transferidos.append(mensaje_seleccionado)
+                    mensajes_no_transferidos.append(mensaje_seleccionado_idx)
 
             # Actualizar el contenedor de origen
             for mensaje in mensajes_a_transferir:
                 mensajes_contenedores[contenedor_index].remove(mensaje)
                 mensajes_contenedores[destino_index].append(mensaje)
-                volumen_mensaje = df_final.loc[df_final[columnas_mapeadas['Texto de mensaje']] == mensaje, 'Volumen_LibrUtiliz'].values[0]
-                contenedores[contenedor_index] -= volumen_mensaje
+                contenedores[contenedor_index] -= df_final.loc[mensaje, 'Volumen_LibrUtiliz']
 
+            # Mostrar advertencia si se alcanzó el límite
             if mensajes_no_transferidos:
-                advertencia = f"No se pudieron transferir los siguientes mensajes porque se alcanzó el límite de volumen del contenedor de destino:\n{', '.join(map(str, mensajes_no_transferidos))}"
+                advertencia = "No se pudieron transferir los siguientes mensajes porque se alcanzó el límite de volumen del contenedor de destino:\n"
+                advertencia += "\n".join([f"{df_final.loc[m, 'Texto de mensaje']} (Nombre: {df_final.loc[m, 'Nombre']})" for m in mensajes_no_transferidos])
                 messagebox.showwarning("Advertencia", advertencia)
 
             # Actualizar la interfaz
             mensajes_listbox.delete(0, tk.END)
-            for mensaje in mensajes_contenedores[contenedor_index]:
-                mensajes_listbox.insert(tk.END, mensaje)
+            for mensaje_idx in mensajes_contenedores[contenedor_index]:
+                texto_mensaje = df_final.loc[mensaje_idx, 'Texto de mensaje']
+                nombre = df_final.loc[mensaje_idx, 'Nombre']
+                mensajes_listbox.insert(tk.END, f"{texto_mensaje} (Nombre: {nombre})")
 
             tree.item(selected_item, values=(f"Contenedor {contenedor_index + 1}: {contenedores[contenedor_index]:.2f} unidades de volumen",))
             tree.item(destino_index, values=(f"Contenedor {destino_index + 1}: {contenedores[destino_index]:.2f} unidades de volumen",))
@@ -1612,18 +1074,103 @@ def mostrar_resultados(totales, contenedores, mensajes_contenedores, df_final, c
             # Si un contenedor queda vacío, poner su volumen a 0
             if len(mensajes_contenedores[contenedor_index]) == 0:
                 contenedores[contenedor_index] = 0
+                tree.item(selected_item, values=(f"Contenedor {contenedor_index + 1}: {contenedores[contenedor_index]:.2f} unidades de volumen",))
 
         tk.Button(mensajes_ventana, text="Transferir mensajes", command=transferir_mensajes).pack(pady=10)
 
     tree.bind("<<TreeviewSelect>>", on_select)
 
-    tk.Button(root, text="Exportar a Excel", command=lambda: exportar_a_excel(contenedores, mensajes_contenedores, df_final, columnas_mapeadas)).pack(pady=10)
+    tk.Button(root, text="Exportar a Excel", command=lambda: exportar_a_excel(
+        contenedores, mensajes_contenedores, df_final, columnas_mapeadas, capacidad_contenedor_max)).pack(pady=10)
+
+    # Verificación de integridad antes de iniciar el loop
+    filas_asignadas = sum(len(mensajes) for mensajes in mensajes_contenedores)
+    total_filas = df_final.shape[0]
+    if filas_asignadas != total_filas:
+        messagebox.showerror("Error de Integridad", f"Se han asignado {filas_asignadas} filas, pero el total es {total_filas}.")
+        print(f"⚠️ Error: Se han asignado {filas_asignadas} filas, pero el total es {total_filas}.")
+    else:
+        print("✅ Todas las filas han sido asignadas correctamente a contenedores.")
 
     root.mainloop()
 
-y el main.py
 
-from interfaz import Interfaz
+def main_proceso(df_final, columnas_mapeadas, capacidad_contenedor_max):
+    # Verificar que 'Nombre' y 'Texto de mensaje' estén presentes
+    required_columns = ['Nombre', 'Texto de mensaje', 'Bruto', 'Neto', 'Volumen', 'Importe', 'LibrUtiliz', 'Contador']
+    for col in required_columns:
+        if col not in df_final.columns:
+            messagebox.showerror("Error", f"La columna '{col}' no está presente en los datos.")
+            print(f"❌ Error: La columna '{col}' no está presente en los datos.")
+            return
+
+    # Rellenar valores nulos en la columna 'Nombre' si es necesario
+    df_final['Nombre'] = df_final['Nombre'].fillna('Sin Nombre')
+
+    # Calcular contenedores
+    contenedores_volumenes, mensajes_contenedores = calcular_contenedores(df_final, columnas_mapeadas, capacidad_contenedor_max)
+
+    # Calcular totales
+    totales = calcular_totales(df_final)
+
+    # Mostrar resultados
+    mostrar_resultados(totales, contenedores_volumenes, mensajes_contenedores, df_final, columnas_mapeadas, capacidad_contenedor_max)
+
+
+def cargar_datos(ruta_archivo):
+    try:
+        df = pd.read_excel(ruta_archivo)
+        print(f"✅ Datos cargados exitosamente desde '{ruta_archivo}'.")
+        return df
+    except Exception as e:
+        messagebox.showerror("Error de Carga", f"Ocurrió un error al cargar el archivo: {e}")
+        print(f"❌ Error al cargar el archivo: {e}")
+        return None
+
+
+def main():
+    # Crear la ventana principal para seleccionar el archivo de datos
+    root = tk.Tk()
+    root.withdraw()  # Ocultar la ventana principal
+
+    messagebox.showinfo("Seleccionar Archivo", "Seleccione el archivo Excel que contiene los datos.")
+
+    from tkinter import filedialog
+
+    ruta_archivo = filedialog.askopenfilename(
+        title="Seleccionar archivo Excel",
+        filetypes=[("Archivos de Excel", "*.xlsx *.xls")]
+    )
+
+    if not ruta_archivo:
+        messagebox.showwarning("Sin Selección", "No se ha seleccionado ningún archivo. El programa se cerrará.")
+        print("⚠️ No se ha seleccionado ningún archivo. El programa se cerrará.")
+        return
+
+    df_final = cargar_datos(ruta_archivo)
+    if df_final is None:
+        return
+
+    # Definir las columnas mapeadas si es necesario (ejemplo)
+    columnas_mapeadas = {
+        # 'columna_original': 'columna_mapeada',
+        # Añade tus mapeos aquí si los hay
+    }
+
+    # Definir la capacidad máxima del contenedor (ejemplo)
+    capacidad_contenedor_max = 1000  # Ajusta este valor según tus necesidades
+
+    # Llamar a la función principal de procesamiento
+    main_proceso(df_final, columnas_mapeadas, capacidad_contenedor_max)
+
+
+if __name__ == "__main__":
+    main()
+
+    main.py
+
+
+    from interfaz import Interfaz
 
 def main():
     app = Interfaz()

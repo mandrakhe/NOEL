@@ -278,7 +278,7 @@ class Interfaz:
                 raise ValueError(
                     "No se encontraron las columnas necesarias en el portafolio."
                 )
-
+                
             # Mapear las columnas
             def find_closest_column(column_name, df_columns):
                 for col in df_columns:

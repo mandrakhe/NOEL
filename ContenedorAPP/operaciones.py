@@ -1,5 +1,3 @@
-# operaciones.py
-
 import os
 from tkinter import ttk
 import pandas as pd
@@ -12,9 +10,6 @@ from openpyxl.utils import get_column_letter
 
 def exportar_a_excel(contenedores_volumenes, mensajes_contenedores, df_final, columnas_mapeadas, capacidad_contenedor_max):
     try:
-        # Importar estilos para formatear celdas
-        from openpyxl.styles import Font, PatternFill
-        from openpyxl.utils import get_column_letter
 
         # Obtener la ruta del escritorio dependiendo del sistema operativo
         if os.name == 'nt':  # Para Windows
@@ -181,6 +176,10 @@ def calcular_totales(df):
 
 
 def calcular_contenedores(df, columnas_mapeadas, capacidad_contenedor_max):
+    # Ordenar el DataFrame por la columna 'Lote' de menor a mayor
+    df['Lote'] = pd.to_numeric(df['Lote'], errors='coerce')  # Aseguramos que la columna Lote sea numérica
+    df = df.sort_values(by='Lote')
+
     # Inicializar listas de contenedores y mensajes
     contenedores_volumenes = []
     mensajes_contenedores = []
@@ -192,7 +191,6 @@ def calcular_contenedores(df, columnas_mapeadas, capacidad_contenedor_max):
     # Inicializar variables
     current_container = []
     cumulative_vol = 0
-
     total_rows = df.shape[0]
     processed_rows = 0
 
@@ -201,6 +199,7 @@ def calcular_contenedores(df, columnas_mapeadas, capacidad_contenedor_max):
         vol_lib_util = row['Volumen_LibrUtiliz']
         mensaje = index  # Usar el índice único como identificador
 
+        # Si el volumen del mensaje excede la capacidad, creamos un contenedor para él solo
         if vol_lib_util > capacidad_contenedor_max:
             # Marcar la fila para colorear
             df.at[index, 'Color_Volumen'] = 'yellow'
@@ -210,21 +209,23 @@ def calcular_contenedores(df, columnas_mapeadas, capacidad_contenedor_max):
             print(f"Fila {processed_rows}/{total_rows} asignada a Contenedor individual por exceso de volumen.")
             continue
 
-        if cumulative_vol + vol_lib_util <= capacidad_contenedor_max:
-            # Agregar a contenedor actual
-            current_container.append(mensaje)
-            cumulative_vol += vol_lib_util
-            print(f"Fila {processed_rows}/{total_rows} agregada al Contenedor actual. Volumen acumulado: {cumulative_vol:.2f}")
-        else:
+        # Si el mensaje no cabe en el contenedor actual, llenamos el contenedor y empezamos uno nuevo
+        if cumulative_vol + vol_lib_util > capacidad_contenedor_max:
             # Finalizar contenedor actual
             if current_container:
                 contenedores_volumenes.append(cumulative_vol)
                 mensajes_contenedores.append(current_container)
                 print(f"Contenedor finalizado con volumen total: {cumulative_vol:.2f}")
-            # Iniciar nuevo contenedor con la fila actual
+
+            # Iniciar un nuevo contenedor con la fila actual
             current_container = [mensaje]
             cumulative_vol = vol_lib_util
             print(f"Fila {processed_rows}/{total_rows} iniciando un nuevo Contenedor. Volumen: {cumulative_vol:.2f}")
+        else:
+            # Agregar a contenedor actual
+            current_container.append(mensaje)
+            cumulative_vol += vol_lib_util
+            print(f"Fila {processed_rows}/{total_rows} agregada al Contenedor actual. Volumen acumulado: {cumulative_vol:.2f}")
 
     # Si hay un contenedor actual al final, agregarlo
     if current_container:
@@ -243,6 +244,7 @@ def calcular_contenedores(df, columnas_mapeadas, capacidad_contenedor_max):
         print("✅ Todas las filas han sido asignadas correctamente a contenedores.")
 
     return contenedores_volumenes, mensajes_contenedores
+
 
 
 def mostrar_resultados(totales, contenedores, mensajes_contenedores, df_final, columnas_mapeadas, capacidad_contenedor_max):
