@@ -7,7 +7,7 @@ class Interfaz:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Subir archivo")
-        self.root.geometry("600x600")  # Ajustamos el tamaño de la ventana
+        self.root.geometry("600x750")  # Ajustamos el tamaño de la ventana
         self.root.configure(bg="#fff")
 
         self.label = tk.Label(
@@ -347,11 +347,6 @@ class Interfaz:
                 )
                 return
 
-            # Eliminar duplicados
-            df_resultado.drop_duplicates(
-                subset=['Material', 'Texto breve material', 'Cliente', 'Nombre'],
-                inplace=True
-            )
 
             # Columnas adicionales que queremos agregar del archivo subido
             columnas_adicionales = ['Doc.comer.', 'LibrUtiliz', 'Grupo', 'Lote']
