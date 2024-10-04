@@ -1,0 +1,29 @@
+Titulos: 
+1 cambiar libutiliz por cajas
+
+2 Cambiar los titulos a :  bg = azul claro y las letras en blanco
+
+3 Agrandar la fuente de letra
+
+4 quitar las lineas de excel 
+
+Info:  
+
+Bruto : Peso bruto (kg)
+Neto: Peso neto (kg)
+Volumen (m3)
+Importe : Valor FOB
+cambiar Doc.comer. por Pedido sin el .0
+ mover libutiliz a la columa siguiente de Texto de mensaje 
+
+
+Totales: 
+a bruto y a neto ponerles el kg, importe sería "Ventas totales FOB" y Total cajas
+
+
+Adicionales:
+
+Añadir una fila la cual se llame "Adición Referencias "
+
+
+Test: Peru, goya, dagec  

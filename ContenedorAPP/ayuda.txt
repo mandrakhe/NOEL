@@ -1,4 +1,4 @@
-archivo_excel
+archivo_excel.py
 
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -132,8 +132,8 @@ def mostrar_resultados(totales, contenedores, mensajes_contenedores, df_filtrado
 
     root.mainloop()
 
-    interfaz.py
 
+    interfaz.py
 
     # interfaz.py
 
@@ -147,24 +147,23 @@ class Interfaz:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Gestor de Contenedores")
-        self.root.geometry("800x800")  # Tamaño ajustado de la ventana
+        self.root.geometry("800x620")  # Tamaño ajustado de la ventana
         self.root.configure(bg="#f0f0f0")  # Color de fondo suave
 
         # Estilos
         self.style = ttk.Style()
         self.style.theme_use("clam")  # Tema moderno
-        self.style.configure("TLabel", background="#f0f0f0", font=("Arial", 12))
-        self.style.configure("TButton", font=("Arial", 12), padding=10)
-        self.style.configure("TEntry", font=("Arial", 12))
-        self.style.configure("TCheckbutton", background="#f0f0f0", font=("Arial", 12))
-        self.style.configure("TRadiobutton", background="#f0f0f0", font=("Arial", 12))
+
+        # Configuración de estilos personalizados
+        self.configurar_estilos()
 
         # Título de la Aplicación
         titulo = ttk.Label(
             self.root, 
             text="Gestor de Contenedores", 
             font=("Arial", 20, "bold"),
-            background="#f0f0f0"
+            background="#f0f0f0",
+            foreground="#4CAF50"
         )
         titulo.pack(pady=20)
 
@@ -172,7 +171,9 @@ class Interfaz:
         instruccion = ttk.Label(
             self.root, 
             text="Por favor, sube tu archivo Excel para comenzar:", 
-            font=("Arial", 14)
+            font=("Arial", 14),
+            background="#f0f0f0",
+            foreground="#333333"
         )
         instruccion.pack(pady=10)
 
@@ -181,15 +182,15 @@ class Interfaz:
             self.root, 
             text="Subir Archivo", 
             command=self.subir_archivo,
-            style="TButton"
+            style="Primary.TButton"
         )
         self.boton_subir.pack(pady=20)
 
         # Campo de búsqueda con su botón
-        buscar_frame = ttk.Frame(self.root)
+        buscar_frame = ttk.Frame(self.root, style="TFrame")
         buscar_frame.pack(pady=10, fill='x', padx=50)
 
-        self.entry_buscar = ttk.Entry(buscar_frame, font=("Arial", 12))
+        self.entry_buscar = ttk.Entry(buscar_frame, font=("Arial", 12), style="TEntry")
         self.entry_buscar.pack(side='left', fill='x', expand=True, padx=(0, 10))
         self.entry_buscar.bind('<KeyRelease>', self.filtrar_datos)
 
@@ -197,19 +198,19 @@ class Interfaz:
             buscar_frame, 
             text="Buscar", 
             command=self.buscar_datos,
-            style="TButton"
+            style="Secondary.TButton"
         )
         buscar_button.pack(side='right')
 
         # Listbox para mostrar 'Nombre' con Scrollbar
-        listbox_frame = ttk.Frame(self.root)
-        listbox_frame.pack(pady=10, fill='both', expand=True, padx=50)
+        listbox_frame = ttk.Frame(self.root, style="TFrame")
+        listbox_frame.pack(pady=10, fill='x', padx=50)
 
         self.listbox_nombres = tk.Listbox(
             listbox_frame, 
             selectmode=tk.MULTIPLE, 
-            width=50, 
-            height=20, 
+            width=100, 
+            height=10,  # Ajuste de altura a 20
             exportselection=0, 
             font=("Arial", 12),
             bg="#ffffff",
@@ -217,21 +218,21 @@ class Interfaz:
             highlightthickness=1,
             relief="solid"
         )
-        self.listbox_nombres.pack(side='left', fill='both', expand=True)
+        self.listbox_nombres.pack(side='left', fill='y')  # fill='y' para ajustar la altura
 
         scrollbar = ttk.Scrollbar(listbox_frame, orient="vertical", command=self.listbox_nombres.yview)
         scrollbar.pack(side='right', fill='y')
         self.listbox_nombres.config(yscrollcommand=scrollbar.set)
 
         # Botones adicionales
-        botones_frame = ttk.Frame(self.root)
+        botones_frame = ttk.Frame(self.root, style="TFrame")
         botones_frame.pack(pady=20)
 
         self.boton_buscar = ttk.Button(
             botones_frame, 
             text="Buscar Datos", 
             command=self.buscar_datos,
-            style="TButton"
+            style="Secondary.TButton"
         )
         self.boton_buscar.grid(row=0, column=0, padx=10)
 
@@ -239,9 +240,18 @@ class Interfaz:
             botones_frame, 
             text="Procesar Selección", 
             command=self.procesar_seleccion,
-            style="TButton"
+            style="Primary.TButton"
         )
         self.boton_procesar.grid(row=0, column=1, padx=10)
+
+        # Nuevo Botón: Mostrar Inventario
+        self.boton_mostrar_inventario = ttk.Button(
+            botones_frame, 
+            text="Mostrar Inventario", 
+            command=self.mostrar_inventario,
+            style="Secondary.TButton"
+        )
+        self.boton_mostrar_inventario.grid(row=0, column=2, padx=10)
 
         # Variable para la capacidad del contenedor
         self.capacidad_contenedor = tk.DoubleVar(value=33.2)  # Valor por defecto para 20ft
@@ -249,6 +259,47 @@ class Interfaz:
         # Datos completos para el filtrado
         self.df_subido = pd.DataFrame()
         self.datos_filtrados = pd.DataFrame()
+
+    def configurar_estilos(self):
+        # Estilos de los Botones
+        self.style.configure("Primary.TButton",
+                             font=("Arial", 12),
+                             padding=10,
+                             background="#2196F3",
+                             foreground="white")
+        self.style.configure("Secondary.TButton",
+                             font=("Arial", 12),
+                             padding=10,
+                             background="#FF9800",
+                             foreground="white")
+        
+        # Eliminar efectos de hover configurando map para que no cambie nada
+        self.style.map("Primary.TButton",
+                       background=[("active", "#2196F3")],
+                       foreground=[("active", "white")])
+        self.style.map("Secondary.TButton",
+                       background=[("active", "#FF9800")],
+                       foreground=[("active", "white")])
+
+        # Estilo para Frame
+        self.style.configure("TFrame", background="#f0f0f0")
+
+        # Estilo para Entry
+        self.style.configure("TEntry",
+                             fieldbackground="#ffffff",
+                             foreground="#000000",
+                             bordercolor="#4CAF50",
+                             borderwidth=1)
+
+        # Estilo para Checkbutton y Radiobutton
+        self.style.configure("TCheckbutton",
+                             background="#f0f0f0",
+                             foreground="#333333",
+                             font=("Arial", 12))
+        self.style.configure("TRadiobutton",
+                             background="#f0f0f0",
+                             foreground="#333333",
+                             font=("Arial", 12))
 
     def subir_archivo(self):
         archivo_path = filedialog.askopenfilename(
@@ -293,17 +344,25 @@ class Interfaz:
         grupo_window.configure(bg="#f0f0f0")
 
         # Estilos
-        style = ttk.Style()
-        style.configure("TLabel", background="#f0f0f0", font=("Arial", 12))
-        style.configure("TButton", font=("Arial", 12), padding=10)
-        style.configure("TCheckbutton", background="#f0f0f0", font=("Arial", 12))
-
+        grupo_style = ttk.Style(grupo_window)
+        grupo_style.theme_use("clam")
+        grupo_style.configure("TLabel", background="#f0f0f0", font=("Arial", 12), foreground="#333333")
+        grupo_style.configure("TButton", font=("Arial", 12), padding=10, background="#2196F3", foreground="white")
+        grupo_style.map("TButton",
+                        background=[("active", "#2196F3")],
+                        foreground=[("active", "white")])
+        grupo_style.configure("TCheckbutton",
+                             background="#f0f0f0",
+                             foreground="#333333",
+                             font=("Arial", 12))
+        
         # Título de la ventana
         titulo_grupo = ttk.Label(
             grupo_window, 
             text="Seleccione los grupos de datos a procesar:", 
             font=("Arial", 16, "bold"),
-            background="#f0f0f0"
+            background="#f0f0f0",
+            foreground="#4CAF50"
         )
         titulo_grupo.pack(pady=20)
 
@@ -331,7 +390,7 @@ class Interfaz:
             grupo_window, 
             text="Confirmar Selección", 
             command=lambda: self.confirmar_grupo_seleccion(grupo_window, df_subido),
-            style="TButton"
+            style="Primary.TButton"
         )
         boton_confirmar.pack(pady=30)
 
@@ -420,17 +479,22 @@ class Interfaz:
         contenedor_window.configure(bg="#f0f0f0")
 
         # Estilos
-        style = ttk.Style()
-        style.configure("TLabel", background="#f0f0f0", font=("Arial", 12))
-        style.configure("TRadiobutton", background="#f0f0f0", font=("Arial", 12))
-        style.configure("TButton", font=("Arial", 12), padding=10)
+        contenedor_style = ttk.Style(contenedor_window)
+        contenedor_style.theme_use("clam")
+        contenedor_style.configure("TLabel", background="#f0f0f0", font=("Arial", 12), foreground="#333333")
+        contenedor_style.configure("TRadiobutton", background="#f0f0f0", font=("Arial", 12), foreground="#333333")
+        contenedor_style.configure("TButton", font=("Arial", 12), padding=10, background="#2196F3", foreground="white")
+        contenedor_style.map("TButton",
+                             background=[("active", "#2196F3")],
+                             foreground=[("active", "white")])
 
         # Título de la ventana
         titulo_contenedor = ttk.Label(
             contenedor_window, 
             text="Seleccione el tipo de contenedor:", 
             font=("Arial", 16, "bold"),
-            background="#f0f0f0"
+            background="#f0f0f0",
+            foreground="#4CAF50"
         )
         titulo_contenedor.pack(pady=20)
 
@@ -468,7 +532,8 @@ class Interfaz:
                 text=opcion,
                 variable=opcion_seleccionada,
                 value=opcion,
-                command=actualizar_capacidad
+                command=actualizar_capacidad,
+                style="TRadiobutton"
             ).pack(anchor='w', padx=50, pady=10)
 
         # Botón de Confirmar
@@ -476,7 +541,7 @@ class Interfaz:
             contenedor_window, 
             text="Confirmar Selección", 
             command=lambda: self.confirmar_contenedor_seleccion(contenedor_window, df_filtrado),
-            style="TButton"
+            style="Primary.TButton"
         )
         boton_confirmar.pack(pady=30)
 
@@ -671,32 +736,38 @@ class Interfaz:
         input_window.configure(bg="#f0f0f0")
 
         # Estilos
-        style = ttk.Style()
-        style.configure("TLabel", background="#f0f0f0", font=("Arial", 12))
-        style.configure("TButton", font=("Arial", 12), padding=10)
+        input_style = ttk.Style(input_window)
+        input_style.theme_use("clam")
+        input_style.configure("TLabel", background="#f0f0f0", font=("Arial", 12), foreground="#333333")
+        input_style.configure("TButton", font=("Arial", 12), padding=10, background="#2196F3", foreground="white")
+        input_style.map("TButton",
+                        background=[("active", "#2196F3")],
+                        foreground=[("active", "white")])
 
         # Título de la ventana
         titulo_buscar = ttk.Label(
             input_window, 
             text="Buscar Datos por Material", 
             font=("Arial", 16, "bold"),
-            background="#f0f0f0"
+            background="#f0f0f0",
+            foreground="#4CAF50"
         )
         titulo_buscar.pack(pady=20)
 
         # Campo para ingresar 'Material'
-        frame_material = ttk.Frame(input_window)
+        frame_material = ttk.Frame(input_window, style="TFrame")
         frame_material.pack(pady=10, padx=50, fill='x')
 
         label_material = ttk.Label(
             frame_material, 
             text="Material:", 
             font=("Arial", 12),
-            background="#f0f0f0"
+            background="#f0f0f0",
+            foreground="#333333"
         )
         label_material.pack(side='left', padx=(0, 10))
 
-        material_entry = ttk.Entry(frame_material, font=("Arial", 12))
+        material_entry = ttk.Entry(frame_material, font=("Arial", 12), style="TEntry")
         material_entry.pack(side='left', fill='x', expand=True)
 
         # Mostrar el nombre seleccionado
@@ -704,7 +775,8 @@ class Interfaz:
             input_window, 
             text=f"Nombre seleccionado: {nombre_seleccionado}",
             font=("Arial", 12),
-            background="#f0f0f0"
+            background="#f0f0f0",
+            foreground="#333333"
         )
         label_nombre.pack(pady=10)
 
@@ -717,7 +789,7 @@ class Interfaz:
                 nombre_seleccionado,
                 input_window
             ),
-            style="TButton"
+            style="Primary.TButton"
         )
         boton_buscar.pack(pady=20)
 
@@ -858,8 +930,85 @@ class Interfaz:
     def run(self):
         self.root.mainloop()
 
+    def mostrar_inventario(self):
+        # Obtener los nombres seleccionados en el Listbox
+        seleccionados = [
+            self.listbox_nombres.get(i) for i in self.listbox_nombres.curselection()
+        ]
+
+        if not seleccionados:
+            messagebox.showwarning(
+                "Advertencia",
+                "Debe seleccionar al menos un nombre para mostrar el inventario."
+            )
+            return
+
+        # Filtrar los datos según los nombres seleccionados
+        df_inventario = self.df_subido[self.df_subido['Nombre'].isin(seleccionados)]
+
+        if df_inventario.empty:
+            messagebox.showinfo(
+                "Sin Datos",
+                "No hay datos para los nombres seleccionados."
+            )
+            return
+
+        # Crear una nueva ventana para mostrar el inventario
+        inventario_window = tk.Toplevel(self.root)
+        inventario_window.title("Inventario")
+        inventario_window.geometry("1000x600")  # Ajustar el tamaño según sea necesario
+
+        # Configurar estilo para la nueva ventana
+        style_inventario = ttk.Style(inventario_window)
+        style_inventario.theme_use("clam")
+        style_inventario.configure("Treeview.Heading", font=("Arial", 12, "bold"), background="#2196F3", foreground="white")
+        style_inventario.configure("Treeview", font=("Arial", 11), rowheight=25, fieldbackground="#f0f0f0")
+        style_inventario.map("Treeview", background=[("selected", "#ADD8E6")], foreground=[("selected", "black")])
+
+        # Frame para el Treeview
+        frame_inventario = ttk.Frame(inventario_window, padding=(20, 10))
+        frame_inventario.pack(fill='both', expand=True)
+
+        # Definir las columnas que deseas mostrar
+        columnas_inventario = list(df_inventario.columns)
+
+        # Crear el Treeview
+        tree_inventario = ttk.Treeview(frame_inventario, columns=columnas_inventario, show="headings", height=25)
+
+        # Definir los encabezados y el ancho de las columnas
+        for col in columnas_inventario:
+            tree_inventario.heading(col, text=col)
+            tree_inventario.column(col, anchor='center', width=150)
+
+        # Insertar los datos en el Treeview
+        for _, row in df_inventario.iterrows():
+            valores = [row[col] for col in columnas_inventario]
+            tree_inventario.insert("", "end", values=valores)
+
+        # Scrollbar vertical para el Treeview
+        scrollbar_inventario_v = ttk.Scrollbar(frame_inventario, orient="vertical", command=tree_inventario.yview)
+        tree_inventario.configure(yscroll=scrollbar_inventario_v.set)
+        scrollbar_inventario_v.pack(side='right', fill='y')
+
+        # Scrollbar horizontal para el Treeview
+        scrollbar_inventario_h = ttk.Scrollbar(frame_inventario, orient="horizontal", command=tree_inventario.xview)
+        tree_inventario.configure(xscroll=scrollbar_inventario_h.set)
+        scrollbar_inventario_h.pack(side='bottom', fill='x')
+
+        tree_inventario.pack(fill='both', expand=True)
+
+        # Ajustar automáticamente el ancho de las columnas
+        for col in columnas_inventario:
+            max_length = max(df_inventario[col].astype(str).map(len).max(), len(col))
+            tree_inventario.column(col, width=max_length * 10)
+
+if __name__ == "__main__":
+    app = Interfaz()
+    app.run()
+
 
 operaciones.py
+
 
 # operaciones.py
 
@@ -941,17 +1090,10 @@ def exportar_a_excel(contenedores_volumenes, mensajes_contenedores, df_final, co
                 # Forzar el cálculo automático de fórmulas
                 workbook.calcMode = 'auto'
 
-                # Ajustar el ancho de las columnas automáticamente
-                for column_cells in worksheet.columns:
-                    length = max(len(str(cell.value)) if cell.value is not None else 0 for cell in column_cells)
-                    adjusted_width = length + 2
-                    column_letter = get_column_letter(column_cells[0].column)
-                    worksheet.column_dimensions[column_letter].width = adjusted_width
-
-                # ----------- MODIFICACIÓN PARA UBICAR LOS TOTALES EN N Y O -----------
+                # ----------- MODIFICACIÓN PARA UBICAR LOS TOTALES EN O Y P -----------
                 # Definir las columnas fijas para los totales
-                total_label_col = 'N'
-                total_value_col = 'O'
+                total_label_col = 'O'
+                total_value_col = 'P'
 
                 # Crear una fuente en negrita
                 bold_font = Font(bold=True)
@@ -965,33 +1107,44 @@ def exportar_a_excel(contenedores_volumenes, mensajes_contenedores, df_final, co
                     worksheet[f'{total_label_col}{cell_row}'].font = bold_font
 
                 # Correspondencia de columnas para las fórmulas
-                bruto_col_letter = get_column_letter(df_contenedor.columns.get_loc('Bruto') + 1)
-                neto_col_letter = get_column_letter(df_contenedor.columns.get_loc('Neto') + 1)
-                volumen_col_letter = get_column_letter(df_contenedor.columns.get_loc('Volumen') + 1)
-                importe_col_letter = get_column_letter(df_contenedor.columns.get_loc('Importe') + 1)
-                contador_col_letter = get_column_letter(df_contenedor.columns.get_loc('Contador') + 1)
-                librutiliz_col_letter = get_column_letter(df_contenedor.columns.get_loc('LibrUtiliz') + 1)
+                bruto_col_idx = df_contenedor.columns.get_loc('Bruto') + 1
+                neto_col_idx = df_contenedor.columns.get_loc('Neto') + 1
+                volumen_col_idx = df_contenedor.columns.get_loc('Volumen') + 1
+                importe_col_idx = df_contenedor.columns.get_loc('Importe') + 1
+                contador_col_idx = df_contenedor.columns.get_loc('Contador') + 1
+                librutiliz_col_idx = df_contenedor.columns.get_loc('LibrUtiliz') + 1
+
+                bruto_col_letter = get_column_letter(bruto_col_idx)
+                neto_col_letter = get_column_letter(neto_col_idx)
+                volumen_col_letter = get_column_letter(volumen_col_idx)
+                importe_col_letter = get_column_letter(importe_col_idx)
+                contador_col_letter = get_column_letter(contador_col_idx)
+                librutiliz_col_letter = get_column_letter(librutiliz_col_idx)
 
                 # Definir el rango de las fórmulas desde la fila 2 hasta la última fila con datos
                 start_row = 2
                 end_row = df_contenedor.shape[0] + 1  # Ajustar al número real de filas
 
                 # Escribir las fórmulas de los totales
-                # Total peso Bruto: SUMPRODUCT(Bruto * LibrUtiliz)
-                worksheet[f'{total_value_col}{totals_start_row}'] = f"=SUMPRODUCT({bruto_col_letter}{start_row}:{bruto_col_letter}{end_row}, {librutiliz_col_letter}{start_row}:{librutiliz_col_letter}{end_row})"
+                # Total peso Bruto: SUMPRODUCT((MINUSC(N2:N100)<>"x")*(Bruto * LibrUtiliz))
+                worksheet[f'{total_value_col}{totals_start_row}'] = f"=SUMPRODUCT((LOWER($N${start_row}:$N${end_row})<>\"x\")*({bruto_col_letter}${start_row}:{bruto_col_letter}${end_row})*({librutiliz_col_letter}${start_row}:{librutiliz_col_letter}${end_row}))"
 
-                # Total peso Neto: SUMPRODUCT(Neto * LibrUtiliz)
-                worksheet[f'{total_value_col}{totals_start_row + 1}'] = f"=SUMPRODUCT({neto_col_letter}{start_row}:{neto_col_letter}{end_row}, {librutiliz_col_letter}{start_row}:{librutiliz_col_letter}{end_row})"
+                # Total peso Neto: SUMPRODUCT((MINUSC(N2:N100)<>"x")*(Neto * LibrUtiliz))
+                worksheet[f'{total_value_col}{totals_start_row + 1}'] = f"=SUMPRODUCT((LOWER($N${start_row}:$N${end_row})<>\"x\")*({neto_col_letter}${start_row}:{neto_col_letter}${end_row})*({librutiliz_col_letter}${start_row}:{librutiliz_col_letter}${end_row}))"
 
-                # Total Volumen: SUMPRODUCT(Volumen * LibrUtiliz)
-                worksheet[f'{total_value_col}{totals_start_row + 2}'] = f"=SUMPRODUCT({volumen_col_letter}{start_row}:{volumen_col_letter}{end_row}, {librutiliz_col_letter}{start_row}:{librutiliz_col_letter}{end_row})"
+                # Total Volumen: SUMPRODUCT((MINUSC(N2:N100)<>"x")*(Volumen * LibrUtiliz))
+                worksheet[f'{total_value_col}{totals_start_row + 2}'] = f"=SUMPRODUCT((LOWER($N${start_row}:$N${end_row})<>\"x\")*({volumen_col_letter}${start_row}:{volumen_col_letter}${end_row})*({librutiliz_col_letter}${start_row}:{librutiliz_col_letter}${end_row}))"
 
-                # Total Importe: SUMPRODUCT(Importe * Contador * LibrUtiliz)
-                worksheet[f'{total_value_col}{totals_start_row + 3}'] = f"=SUMPRODUCT({importe_col_letter}{start_row}:{importe_col_letter}{end_row}, {contador_col_letter}{start_row}:{contador_col_letter}{end_row}, {librutiliz_col_letter}{start_row}:{librutiliz_col_letter}{end_row})"
+                # Total Importe: SUMPRODUCT((MINUSC(N2:N100)<>"x")*(Importe * Contador * LibrUtiliz))
+                worksheet[f'{total_value_col}{totals_start_row + 3}'] = f"=SUMPRODUCT((LOWER($N${start_row}:$N${end_row})<>\"x\")*({importe_col_letter}${start_row}:{importe_col_letter}${end_row})*({contador_col_letter}${start_row}:{contador_col_letter}${end_row})*({librutiliz_col_letter}${start_row}:{librutiliz_col_letter}${end_row}))"
 
-                # Total LibrUtiliz: SUM(LibrUtiliz)
-                worksheet[f'{total_value_col}{totals_start_row + 4}'] = f"=SUM({librutiliz_col_letter}{start_row}:{librutiliz_col_letter}{end_row})"
-                # ---------------------------------------------------------------------------
+                # Total LibrUtiliz: SUMPRODUCT((MINUSC(N2:N100)<>"x")*(LibrUtiliz))
+                worksheet[f'{total_value_col}{totals_start_row + 4}'] = f"=SUMPRODUCT((LOWER($N${start_row}:$N${end_row})<>\"x\")*({librutiliz_col_letter}${start_row}:{librutiliz_col_letter}${end_row}))"
+
+                # Ajustar el ancho de la columna de los totales después de definir 'total_value_col'
+                length = max(len(str(cell.value)) if cell.value is not None else 0 for cell in worksheet[total_value_col])
+                adjusted_width = length + 2  # Ajuste para agregar un pequeño margen
+                worksheet.column_dimensions[total_value_col].width = adjusted_width
 
                 # Aplicar el color amarillo a las celdas de 'Volumen' donde 'Color_Volumen' es 'yellow'
                 fill_yellow = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')
@@ -1109,7 +1262,7 @@ def calcular_contenedores(df, columnas_mapeadas, capacidad_contenedor_max):
 def mostrar_resultados(totales, contenedores_volumenes, mensajes_contenedores, df_final, columnas_mapeadas, capacidad_contenedor_max):
     root = tk.Tk()
     root.title("Resultados de Contenedores")
-    root.geometry("1200x800")  # Ajuste del tamaño de la ventana
+    root.geometry("900x600")  # Ajuste del tamaño de la ventana
 
     # Configurar estilo
     style = ttk.Style(root)
@@ -1148,7 +1301,7 @@ def mostrar_resultados(totales, contenedores_volumenes, mensajes_contenedores, d
 
     # Treeview para Contenedores
     columns_contenedores = ("Número de Contenedor", "Peso Neto (unidades)")
-    tree_contenedores = ttk.Treeview(frame_contenedores, columns=columns_contenedores, show="headings", height=15)
+    tree_contenedores = ttk.Treeview(frame_contenedores, columns=columns_contenedores, show="headings", height=9)
     tree_contenedores.heading("Número de Contenedor", text="Número de Contenedor")
     tree_contenedores.heading("Peso Neto (unidades)", text="Peso Neto (unidades)")
 
@@ -1175,7 +1328,7 @@ def mostrar_resultados(totales, contenedores_volumenes, mensajes_contenedores, d
         # Crear una nueva ventana para mostrar los mensajes
         mensajes_ventana = tk.Toplevel(root)
         mensajes_ventana.title(f"Mensajes para Contenedor {contenedor_index + 1}")
-        mensajes_ventana.geometry("1000x600")  # Ajuste del tamaño de la ventana de mensajes
+        mensajes_ventana.geometry("800x400")  # Ajuste del tamaño de la ventana de mensajes
 
         # Configurar estilo para la nueva ventana
         style_mensajes = ttk.Style(mensajes_ventana)
@@ -1190,7 +1343,7 @@ def mostrar_resultados(totales, contenedores_volumenes, mensajes_contenedores, d
 
         # Treeview para Mensajes con todas las columnas
         columnas_mensajes = list(columnas_mapeadas.keys())  # Asegúrate de que esto contenga las columnas necesarias
-        tree_mensajes = ttk.Treeview(frame_mensajes, columns=columnas_mensajes, show="headings", height=20)
+        tree_mensajes = ttk.Treeview(frame_mensajes, columns=columnas_mensajes, show="headings", height=15)
 
         # Definir encabezados y columnas
         for col in columnas_mensajes:
@@ -1370,6 +1523,7 @@ if __name__ == "__main__":
 
 main.py
 
+
 from interfaz import Interfaz
 
 def main():
@@ -1378,7 +1532,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 
 
 Total peso Bruto :::: =SUMAPRODUCTO((MINUSC(N2:N100)<>"x")*(C2:C100)*(K2:K100))
