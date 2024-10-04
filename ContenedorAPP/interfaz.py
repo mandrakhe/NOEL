@@ -1,64 +1,173 @@
+# interfaz.py
+
 import pandas as pd
 import tkinter as tk
 from tkinter import messagebox, filedialog, simpledialog
+from tkinter import ttk
 from operaciones import calcular_totales, calcular_contenedores, mostrar_resultados
 
 class Interfaz:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("Subir archivo")
-        self.root.geometry("600x750")  # Ajustamos el tamaño de la ventana
-        self.root.configure(bg="#fff")
+        self.root.title("Gestor de Contenedores")
+        self.root.geometry("800x620")  # Tamaño ajustado de la ventana
+        self.root.configure(bg="#f0f0f0")  # Color de fondo suave
 
-        self.label = tk.Label(
-            self.root, text="Por favor, suba su archivo:", bg="#fff",
-            font=("Arial", 14)
+        # Estilos
+        self.style = ttk.Style()
+        self.style.theme_use("clam")  # Tema moderno
+
+        # Configuración de estilos personalizados
+        self.configurar_estilos()
+
+        # Título de la Aplicación
+        titulo = ttk.Label(
+            self.root, 
+            text="Gestor de Contenedores", 
+            font=("Arial", 20, "bold"),
+            background="#f0f0f0",
+            foreground="#4CAF50"
         )
-        self.label.pack(pady=10)
+        titulo.pack(pady=20)
 
-        # Campo de entrada para buscar
-        self.entry_buscar = tk.Entry(self.root, font=("Arial", 12))
-        self.entry_buscar.pack(pady=5)
+        # Instrucción para subir archivo
+        instruccion = ttk.Label(
+            self.root, 
+            text="Por favor, sube tu archivo Excel para comenzar:", 
+            font=("Arial", 14),
+            background="#f0f0f0",
+            foreground="#333333"
+        )
+        instruccion.pack(pady=10)
+
+        # Botón para subir archivo
+        self.boton_subir = ttk.Button(
+            self.root, 
+            text="Subir Archivo", 
+            command=self.subir_archivo,
+            style="Primary.TButton"
+        )
+        self.boton_subir.pack(pady=20)
+
+        # Campo de búsqueda con su botón
+        buscar_frame = ttk.Frame(self.root, style="TFrame")
+        buscar_frame.pack(pady=10, fill='x', padx=50)
+
+        self.entry_buscar = ttk.Entry(buscar_frame, font=("Arial", 12), style="TEntry")
+        self.entry_buscar.pack(side='left', fill='x', expand=True, padx=(0, 10))
         self.entry_buscar.bind('<KeyRelease>', self.filtrar_datos)
 
-        # Listbox para mostrar 'Nombre'
-        self.listbox_nombres = tk.Listbox(
-            self.root, selectmode=tk.MULTIPLE, width=50, height=20, exportselection=0
+        buscar_button = ttk.Button(
+            buscar_frame, 
+            text="Buscar", 
+            command=self.buscar_datos,
+            style="Secondary.TButton"
         )
-        self.listbox_nombres.pack(pady=10)
+        buscar_button.pack(side='right')
 
-        self.boton_subir = tk.Button(
-            self.root, text="Subir archivo", command=self.subir_archivo,
-            bg="#4caf50", fg="white", font=("Arial", 12)
+        # Listbox para mostrar 'Nombre' con Scrollbar
+        listbox_frame = ttk.Frame(self.root, style="TFrame")
+        listbox_frame.pack(pady=10, fill='x', padx=50)
+
+        self.listbox_nombres = tk.Listbox(
+            listbox_frame, 
+            selectmode=tk.MULTIPLE, 
+            width=100, 
+            height=10,  # Ajuste de altura a 20
+            exportselection=0, 
+            font=("Arial", 12),
+            bg="#ffffff",
+            fg="#000000",
+            highlightthickness=1,
+            relief="solid"
         )
-        self.boton_subir.pack(pady=10)
+        self.listbox_nombres.pack(side='left', fill='y')  # fill='y' para ajustar la altura
+
+        scrollbar = ttk.Scrollbar(listbox_frame, orient="vertical", command=self.listbox_nombres.yview)
+        scrollbar.pack(side='right', fill='y')
+        self.listbox_nombres.config(yscrollcommand=scrollbar.set)
+
+        # Botones adicionales
+        botones_frame = ttk.Frame(self.root, style="TFrame")
+        botones_frame.pack(pady=20)
+
+        self.boton_buscar = ttk.Button(
+            botones_frame, 
+            text="Buscar Datos", 
+            command=self.buscar_datos,
+            style="Secondary.TButton"
+        )
+        self.boton_buscar.grid(row=0, column=0, padx=10)
+
+        self.boton_procesar = ttk.Button(
+            botones_frame, 
+            text="Procesar Selección", 
+            command=self.procesar_seleccion,
+            style="Primary.TButton"
+        )
+        self.boton_procesar.grid(row=0, column=1, padx=10)
+
+        # Nuevo Botón: Mostrar Inventario
+        self.boton_mostrar_inventario = ttk.Button(
+            botones_frame, 
+            text="Mostrar Inventario", 
+            command=self.mostrar_inventario,
+            style="Secondary.TButton"
+        )
+        self.boton_mostrar_inventario.grid(row=0, column=2, padx=10)
+
+        # Variable para la capacidad del contenedor
+        self.capacidad_contenedor = tk.DoubleVar(value=33.2)  # Valor por defecto para 20ft
 
         # Datos completos para el filtrado
         self.df_subido = pd.DataFrame()
         self.datos_filtrados = pd.DataFrame()
 
-        # Botón para buscar datos
-        self.boton_buscar = tk.Button(
-            self.root, text="Buscar datos", command=self.buscar_datos,
-            bg="#2196f3", fg="white", font=("Arial", 12)
-        )
-        self.boton_buscar.pack(pady=10)
+    def configurar_estilos(self):
+        # Estilos de los Botones
+        self.style.configure("Primary.TButton",
+                             font=("Arial", 12),
+                             padding=10,
+                             background="#2196F3",
+                             foreground="white")
+        self.style.configure("Secondary.TButton",
+                             font=("Arial", 12),
+                             padding=10,
+                             background="#FF9800",
+                             foreground="white")
+        
+        # Eliminar efectos de hover configurando map para que no cambie nada
+        self.style.map("Primary.TButton",
+                       background=[("active", "#2196F3")],
+                       foreground=[("active", "white")])
+        self.style.map("Secondary.TButton",
+                       background=[("active", "#FF9800")],
+                       foreground=[("active", "white")])
 
-        # Botón para procesar selección
-        self.boton_procesar = tk.Button(
-            self.root, text="Procesar selección", command=self.procesar_seleccion,
-            bg="#2196f3", fg="white", font=("Arial", 12)
-        )
-        self.boton_procesar.pack(pady=10)
+        # Estilo para Frame
+        self.style.configure("TFrame", background="#f0f0f0")
 
-        # Variable para la capacidad del contenedor
-        self.capacidad_contenedor = tk.DoubleVar()
-        self.capacidad_contenedor.set(33.2)  # Valor por defecto para 20ft
+        # Estilo para Entry
+        self.style.configure("TEntry",
+                             fieldbackground="#ffffff",
+                             foreground="#000000",
+                             bordercolor="#4CAF50",
+                             borderwidth=1)
+
+        # Estilo para Checkbutton y Radiobutton
+        self.style.configure("TCheckbutton",
+                             background="#f0f0f0",
+                             foreground="#333333",
+                             font=("Arial", 12))
+        self.style.configure("TRadiobutton",
+                             background="#f0f0f0",
+                             foreground="#333333",
+                             font=("Arial", 12))
 
     def subir_archivo(self):
         archivo_path = filedialog.askopenfilename(
-            title="Seleccionar archivo",
-            filetypes=[("Archivos Excel", "*.xlsx")]
+            title="Seleccionar archivo Excel",
+            filetypes=[("Archivos Excel", "*.xlsx *.xls")]
         )
         if archivo_path:
             self.cargar_datos(archivo_path)
@@ -94,36 +203,69 @@ class Interfaz:
         # Crear una nueva ventana para seleccionar los grupos
         grupo_window = tk.Toplevel(self.root)
         grupo_window.title("Seleccionar Grupo")
+        grupo_window.geometry("450x300")
+        grupo_window.configure(bg="#f0f0f0")
 
-        tk.Label(
-            grupo_window, text="Seleccione el grupo de datos que desea procesar:",
-            font=("Arial", 12)
-        ).pack(pady=10)
+        # Estilos
+        grupo_style = ttk.Style(grupo_window)
+        grupo_style.theme_use("clam")
+        grupo_style.configure("TLabel", background="#f0f0f0", font=("Arial", 12), foreground="#333333")
+        grupo_style.configure("TButton", font=("Arial", 12), padding=10, background="#2196F3", foreground="white")
+        grupo_style.map("TButton",
+                        background=[("active", "#2196F3")],
+                        foreground=[("active", "white")])
+        grupo_style.configure("TCheckbutton",
+                             background="#f0f0f0",
+                             foreground="#333333",
+                             font=("Arial", 12))
+        
+        # Título de la ventana
+        titulo_grupo = ttk.Label(
+            grupo_window, 
+            text="Seleccione los grupos de datos a procesar:", 
+            font=("Arial", 16, "bold"),
+            background="#f0f0f0",
+            foreground="#4CAF50"
+        )
+        titulo_grupo.pack(pady=20)
 
         # Variables para almacenar la selección
         self.grupo_gcfoods = tk.BooleanVar(value=True)
         self.grupo_noel = tk.BooleanVar(value=True)
 
         # Checkbuttons para seleccionar GCFOODS y NOEL
-        tk.Checkbutton(
-            grupo_window, text="GCFOODS", variable=self.grupo_gcfoods
-        ).pack()
-        tk.Checkbutton(
-            grupo_window, text="NOEL", variable=self.grupo_noel
-        ).pack()
+        check_gcfoods = ttk.Checkbutton(
+            grupo_window, 
+            text="GCFOODS", 
+            variable=self.grupo_gcfoods
+        )
+        check_gcfoods.pack(pady=10, anchor='w', padx=50)
 
-        def confirmar_seleccion():
-            if not self.grupo_gcfoods.get() and not self.grupo_noel.get():
-                messagebox.showwarning(
-                    "Advertencia", "Debe seleccionar al menos un grupo."
-                )
-                return
-            grupo_window.destroy()
-            self.mostrar_datos(df_subido)
+        check_noel = ttk.Checkbutton(
+            grupo_window, 
+            text="NOEL", 
+            variable=self.grupo_noel
+        )
+        check_noel.pack(pady=10, anchor='w', padx=50)
 
-        tk.Button(
-            grupo_window, text="Confirmar", command=confirmar_seleccion
-        ).pack(pady=10)
+        # Botón de Confirmar
+        boton_confirmar = ttk.Button(
+            grupo_window, 
+            text="Confirmar Selección", 
+            command=lambda: self.confirmar_grupo_seleccion(grupo_window, df_subido),
+            style="Primary.TButton"
+        )
+        boton_confirmar.pack(pady=30)
+
+    def confirmar_grupo_seleccion(self, ventana, df_subido):
+        if not self.grupo_gcfoods.get() and not self.grupo_noel.get():
+            messagebox.showwarning(
+                "Advertencia", 
+                "Debe seleccionar al menos un grupo."
+            )
+            return
+        ventana.destroy()
+        self.mostrar_datos(df_subido)
 
     def mostrar_datos(self, df_subido):
         # Filtrar df_subido según los grupos seleccionados
@@ -196,10 +338,31 @@ class Interfaz:
         # Crear una nueva ventana para seleccionar el tipo de contenedor
         contenedor_window = tk.Toplevel(self.root)
         contenedor_window.title("Seleccionar Tipo de Contenedor")
+        contenedor_window.geometry("450x350")
+        contenedor_window.configure(bg="#f0f0f0")
 
-        tk.Label(
-            contenedor_window, text="Seleccione el tipo de contenedor:", font=("Arial", 12)
-        ).pack(pady=10)
+        # Estilos
+        contenedor_style = ttk.Style(contenedor_window)
+        contenedor_style.theme_use("clam")
+        contenedor_style.configure("TLabel", background="#f0f0f0", font=("Arial", 12), foreground="#333333")
+        contenedor_style.configure("TRadiobutton", background="#f0f0f0", font=("Arial", 12), foreground="#333333")
+        contenedor_style.configure("TButton", font=("Arial", 12), padding=10, background="#2196F3", foreground="white")
+        contenedor_style.map("TButton",
+                             background=[("active", "#2196F3")],
+                             foreground=[("active", "white")])
+
+        # Título de la ventana
+        titulo_contenedor = ttk.Label(
+            contenedor_window, 
+            text="Seleccione el tipo de contenedor:", 
+            font=("Arial", 16, "bold"),
+            background="#f0f0f0",
+            foreground="#4CAF50"
+        )
+        titulo_contenedor.pack(pady=20)
+
+        # Variable para la opción seleccionada
+        opcion_seleccionada = tk.StringVar(value='20ft')  # Valor por defecto
 
         # Función para actualizar la capacidad según la selección
         def actualizar_capacidad():
@@ -224,35 +387,37 @@ class Interfaz:
             else:
                 self.capacidad_contenedor.set(0)
 
-        # Variable para la opción seleccionada
-        opcion_seleccionada = tk.StringVar()
-        opcion_seleccionada.set('20ft')  # Valor por defecto
-
-        # Opciones de contenedores
+        # Opciones de contenedores con Radiobuttons estilizados
         opciones = ['20ft', '40ft', '40 high', 'Otro']
-
         for opcion in opciones:
-            tk.Radiobutton(
+            ttk.Radiobutton(
                 contenedor_window,
                 text=opcion,
                 variable=opcion_seleccionada,
                 value=opcion,
-                command=actualizar_capacidad
-            ).pack(anchor='w')
+                command=actualizar_capacidad,
+                style="TRadiobutton"
+            ).pack(anchor='w', padx=50, pady=10)
 
-        def confirmar_seleccion():
-            if self.capacidad_contenedor.get() <= 0:
-                messagebox.showwarning(
-                    "Advertencia", "Debe seleccionar un tipo de contenedor válido."
-                )
-                return
-            contenedor_window.destroy()
-            # Después de cerrar la ventana, procesar el archivo
-            self.procesar_archivo(df_filtrado)
+        # Botón de Confirmar
+        boton_confirmar = ttk.Button(
+            contenedor_window, 
+            text="Confirmar Selección", 
+            command=lambda: self.confirmar_contenedor_seleccion(contenedor_window, df_filtrado),
+            style="Primary.TButton"
+        )
+        boton_confirmar.pack(pady=30)
 
-        tk.Button(
-            contenedor_window, text="Confirmar", command=confirmar_seleccion
-        ).pack(pady=10)
+    def confirmar_contenedor_seleccion(self, ventana, df_filtrado):
+        if self.capacidad_contenedor.get() <= 0:
+            messagebox.showwarning(
+                "Advertencia", 
+                "Debe seleccionar un tipo de contenedor válido."
+            )
+            return
+        ventana.destroy()
+        # Después de cerrar la ventana, procesar el archivo
+        self.procesar_archivo(df_filtrado)
 
     def procesar_archivo(self, df_filtrado):
         try:
@@ -264,15 +429,18 @@ class Interfaz:
             # Intentar leer el archivo Portafolio con diferentes filas de encabezado
             df_portafolio = None
             for header_row in [0, 1, 2, 3, 4]:
-                df_temp = pd.read_excel(
-                    "Data_Base\PortafoliocompletointernacionalJulio2024.xlsx",
-                    header=header_row
-                )
-                df_temp.dropna(how='all', inplace=True)
-                df_temp.columns = df_temp.columns.str.strip()
-                if any(col in df_temp.columns for col in columnas_necesarias):
-                    df_portafolio = df_temp
-                    break
+                try:
+                    df_temp = pd.read_excel(
+                        "Data_Base/PortafoliocompletointernacionalJulio2024.xlsx",
+                        header=header_row
+                    )
+                    df_temp.dropna(how='all', inplace=True)
+                    df_temp.columns = df_temp.columns.str.strip()
+                    if any(col in df_temp.columns for col in columnas_necesarias):
+                        df_portafolio = df_temp
+                        break
+                except:
+                    continue  # Intentar con la siguiente fila de encabezado
 
             if df_portafolio is None:
                 raise ValueError(
@@ -426,33 +594,76 @@ class Interfaz:
 
         # Ventana para ingresar los datos de búsqueda
         input_window = tk.Toplevel(self.root)
-        input_window.title("Buscar datos")
+        input_window.title("Buscar Datos")
+        input_window.geometry("450x300")
+        input_window.configure(bg="#f0f0f0")
 
-        tk.Label(
-            input_window, text="Material:", font=("Arial", 12)
-        ).grid(row=0, column=0, padx=10, pady=5)
-        material_entry = tk.Entry(input_window, font=("Arial", 12))
-        material_entry.grid(row=0, column=1, padx=10, pady=5)
+        # Estilos
+        input_style = ttk.Style(input_window)
+        input_style.theme_use("clam")
+        input_style.configure("TLabel", background="#f0f0f0", font=("Arial", 12), foreground="#333333")
+        input_style.configure("TButton", font=("Arial", 12), padding=10, background="#2196F3", foreground="white")
+        input_style.map("TButton",
+                        background=[("active", "#2196F3")],
+                        foreground=[("active", "white")])
+
+        # Título de la ventana
+        titulo_buscar = ttk.Label(
+            input_window, 
+            text="Buscar Datos por Material", 
+            font=("Arial", 16, "bold"),
+            background="#f0f0f0",
+            foreground="#4CAF50"
+        )
+        titulo_buscar.pack(pady=20)
+
+        # Campo para ingresar 'Material'
+        frame_material = ttk.Frame(input_window, style="TFrame")
+        frame_material.pack(pady=10, padx=50, fill='x')
+
+        label_material = ttk.Label(
+            frame_material, 
+            text="Material:", 
+            font=("Arial", 12),
+            background="#f0f0f0",
+            foreground="#333333"
+        )
+        label_material.pack(side='left', padx=(0, 10))
+
+        material_entry = ttk.Entry(frame_material, font=("Arial", 12), style="TEntry")
+        material_entry.pack(side='left', fill='x', expand=True)
 
         # Mostrar el nombre seleccionado
-        tk.Label(
-            input_window, text=f"Nombre seleccionado: {nombre_seleccionado}",
-            font=("Arial", 12)
-        ).grid(row=1, column=0, columnspan=2, padx=10, pady=5)
+        label_nombre = ttk.Label(
+            input_window, 
+            text=f"Nombre seleccionado: {nombre_seleccionado}",
+            font=("Arial", 12),
+            background="#f0f0f0",
+            foreground="#333333"
+        )
+        label_nombre.pack(pady=10)
 
-        tk.Button(
-            input_window, text="Buscar",
+        # Botón para realizar la búsqueda
+        boton_buscar = ttk.Button(
+            input_window, 
+            text="Buscar",
             command=lambda: self.realizar_busqueda(
                 material_entry.get(),
                 nombre_seleccionado,
                 input_window
             ),
-            bg="#4caf50", fg="white", font=("Arial", 12)
-        ).grid(row=2, column=0, columnspan=2, pady=10)
+            style="Primary.TButton"
+        )
+        boton_buscar.pack(pady=20)
 
     def realizar_busqueda(self, material, nombre, input_window):
-        # Mantener abierta la ventana de búsqueda
-        # input_window.destroy()
+        # Validar entrada de material
+        if not material.strip():
+            messagebox.showwarning(
+                "Advertencia",
+                "Debe ingresar un valor para 'Material'."
+            )
+            return
 
         # Cargar el portafolio
         df_portafolio, columnas_mapeadas = self.cargar_portafolio()
@@ -483,7 +694,7 @@ class Interfaz:
 
         if df_resultado.empty:
             messagebox.showinfo(
-                "Sin resultados",
+                "Sin Resultados",
                 "No se encontraron coincidencias con los datos ingresados."
             )
         else:
@@ -493,6 +704,8 @@ class Interfaz:
                 'Importe', 'Cliente', 'Nombre', 'Contador'
             ]
             self.copiar_al_portapapeles(df_resultado, columnas_mapeadas, columnas_a_mostrar)
+            # Cerrar la ventana de búsqueda
+            input_window.destroy()
 
     def copiar_al_portapapeles(self, df_resultado, columnas_mapeadas, columnas_a_copiar):
         # Obtener los datos en el orden de las columnas
@@ -518,7 +731,7 @@ class Interfaz:
         self.root.clipboard_append(datos_string)
 
         messagebox.showinfo(
-            "Datos copiados",
+            "Datos Copiados",
             "Los datos han sido copiados al portapapeles en formato Excel."
         )
 
@@ -532,15 +745,18 @@ class Interfaz:
             # Intentar leer el archivo con diferentes filas de encabezado
             df_portafolio = None
             for header_row in [0, 1, 2, 3, 4]:
-                df_temp = pd.read_excel(
-                    "Data_Base\PortafoliocompletointernacionalJulio2024.xlsx",
-                    header=header_row
-                )
-                df_temp.dropna(how='all', inplace=True)
-                df_temp.columns = df_temp.columns.str.strip()
-                if any(col in df_temp.columns for col in columnas_necesarias):
-                    df_portafolio = df_temp
-                    break
+                try:
+                    df_temp = pd.read_excel(
+                        "Data_Base/PortafoliocompletointernacionalJulio2024.xlsx",
+                        header=header_row
+                    )
+                    df_temp.dropna(how='all', inplace=True)
+                    df_temp.columns = df_temp.columns.str.strip()
+                    if any(col in df_temp.columns for col in columnas_necesarias):
+                        df_portafolio = df_temp
+                        break
+                except:
+                    continue  # Intentar con la siguiente fila de encabezado
 
             if df_portafolio is None:
                 raise ValueError(
@@ -576,3 +792,79 @@ class Interfaz:
 
     def run(self):
         self.root.mainloop()
+
+    def mostrar_inventario(self):
+        # Obtener los nombres seleccionados en el Listbox
+        seleccionados = [
+            self.listbox_nombres.get(i) for i in self.listbox_nombres.curselection()
+        ]
+
+        if not seleccionados:
+            messagebox.showwarning(
+                "Advertencia",
+                "Debe seleccionar al menos un nombre para mostrar el inventario."
+            )
+            return
+
+        # Filtrar los datos según los nombres seleccionados
+        df_inventario = self.df_subido[self.df_subido['Nombre'].isin(seleccionados)]
+
+        if df_inventario.empty:
+            messagebox.showinfo(
+                "Sin Datos",
+                "No hay datos para los nombres seleccionados."
+            )
+            return
+
+        # Crear una nueva ventana para mostrar el inventario
+        inventario_window = tk.Toplevel(self.root)
+        inventario_window.title("Inventario")
+        inventario_window.geometry("1000x600")  # Ajustar el tamaño según sea necesario
+
+        # Configurar estilo para la nueva ventana
+        style_inventario = ttk.Style(inventario_window)
+        style_inventario.theme_use("clam")
+        style_inventario.configure("Treeview.Heading", font=("Arial", 12, "bold"), background="#2196F3", foreground="white")
+        style_inventario.configure("Treeview", font=("Arial", 11), rowheight=25, fieldbackground="#f0f0f0")
+        style_inventario.map("Treeview", background=[("selected", "#ADD8E6")], foreground=[("selected", "black")])
+
+        # Frame para el Treeview
+        frame_inventario = ttk.Frame(inventario_window, padding=(20, 10))
+        frame_inventario.pack(fill='both', expand=True)
+
+        # Definir las columnas que deseas mostrar
+        columnas_inventario = list(df_inventario.columns)
+
+        # Crear el Treeview
+        tree_inventario = ttk.Treeview(frame_inventario, columns=columnas_inventario, show="headings", height=25)
+
+        # Definir los encabezados y el ancho de las columnas
+        for col in columnas_inventario:
+            tree_inventario.heading(col, text=col)
+            tree_inventario.column(col, anchor='center', width=150)
+
+        # Insertar los datos en el Treeview
+        for _, row in df_inventario.iterrows():
+            valores = [row[col] for col in columnas_inventario]
+            tree_inventario.insert("", "end", values=valores)
+
+        # Scrollbar vertical para el Treeview
+        scrollbar_inventario_v = ttk.Scrollbar(frame_inventario, orient="vertical", command=tree_inventario.yview)
+        tree_inventario.configure(yscroll=scrollbar_inventario_v.set)
+        scrollbar_inventario_v.pack(side='right', fill='y')
+
+        # Scrollbar horizontal para el Treeview
+        scrollbar_inventario_h = ttk.Scrollbar(frame_inventario, orient="horizontal", command=tree_inventario.xview)
+        tree_inventario.configure(xscroll=scrollbar_inventario_h.set)
+        scrollbar_inventario_h.pack(side='bottom', fill='x')
+
+        tree_inventario.pack(fill='both', expand=True)
+
+        # Ajustar automáticamente el ancho de las columnas
+        for col in columnas_inventario:
+            max_length = max(df_inventario[col].astype(str).map(len).max(), len(col))
+            tree_inventario.column(col, width=max_length * 10)
+
+if __name__ == "__main__":
+    app = Interfaz()
+    app.run()

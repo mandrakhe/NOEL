@@ -1,16 +1,16 @@
+# operaciones.py
+
 import os
 from tkinter import ttk
 import pandas as pd
 import tkinter as tk
-from tkinter import messagebox, simpledialog
+from tkinter import messagebox, simpledialog, filedialog
 from openpyxl.styles import Font, PatternFill
 from natsort import natsort_keygen
 from openpyxl.utils import get_column_letter
 
-
 def exportar_a_excel(contenedores_volumenes, mensajes_contenedores, df_final, columnas_mapeadas, capacidad_contenedor_max):
     try:
-
         # Obtener la ruta del escritorio dependiendo del sistema operativo
         if os.name == 'nt':  # Para Windows
             desktop_path = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
@@ -78,17 +78,10 @@ def exportar_a_excel(contenedores_volumenes, mensajes_contenedores, df_final, co
                 # Forzar el cálculo automático de fórmulas
                 workbook.calcMode = 'auto'
 
-                # Ajustar el ancho de las columnas automáticamente
-                for column_cells in worksheet.columns:
-                    length = max(len(str(cell.value)) if cell.value is not None else 0 for cell in column_cells)
-                    adjusted_width = length + 2
-                    column_letter = get_column_letter(column_cells[0].column)
-                    worksheet.column_dimensions[column_letter].width = adjusted_width
-
-                # ----------- MODIFICACIÓN PARA UBICAR LOS TOTALES EN Q Y R -----------
+                # ----------- MODIFICACIÓN PARA UBICAR LOS TOTALES EN O Y P -----------
                 # Definir las columnas fijas para los totales
-                total_label_col = 'N'
-                total_value_col = 'O'
+                total_label_col = 'O'
+                total_value_col = 'P'
 
                 # Crear una fuente en negrita
                 bold_font = Font(bold=True)
@@ -102,33 +95,44 @@ def exportar_a_excel(contenedores_volumenes, mensajes_contenedores, df_final, co
                     worksheet[f'{total_label_col}{cell_row}'].font = bold_font
 
                 # Correspondencia de columnas para las fórmulas
-                bruto_col_letter = get_column_letter(df_contenedor.columns.get_loc('Bruto') + 1)
-                neto_col_letter = get_column_letter(df_contenedor.columns.get_loc('Neto') + 1)
-                volumen_col_letter = get_column_letter(df_contenedor.columns.get_loc('Volumen') + 1)
-                importe_col_letter = get_column_letter(df_contenedor.columns.get_loc('Importe') + 1)
-                contador_col_letter = get_column_letter(df_contenedor.columns.get_loc('Contador') + 1)
-                librutiliz_col_letter = get_column_letter(df_contenedor.columns.get_loc('LibrUtiliz') + 1)
+                bruto_col_idx = df_contenedor.columns.get_loc('Bruto') + 1
+                neto_col_idx = df_contenedor.columns.get_loc('Neto') + 1
+                volumen_col_idx = df_contenedor.columns.get_loc('Volumen') + 1
+                importe_col_idx = df_contenedor.columns.get_loc('Importe') + 1
+                contador_col_idx = df_contenedor.columns.get_loc('Contador') + 1
+                librutiliz_col_idx = df_contenedor.columns.get_loc('LibrUtiliz') + 1
+
+                bruto_col_letter = get_column_letter(bruto_col_idx)
+                neto_col_letter = get_column_letter(neto_col_idx)
+                volumen_col_letter = get_column_letter(volumen_col_idx)
+                importe_col_letter = get_column_letter(importe_col_idx)
+                contador_col_letter = get_column_letter(contador_col_idx)
+                librutiliz_col_letter = get_column_letter(librutiliz_col_idx)
 
                 # Definir el rango de las fórmulas desde la fila 2 hasta la última fila con datos
                 start_row = 2
-                end_row = 100
+                end_row = df_contenedor.shape[0] + 1  # Ajustar al número real de filas
 
                 # Escribir las fórmulas de los totales
-                # Total peso Bruto: SUMPRODUCT(Bruto * LibrUtiliz)
-                worksheet[f'{total_value_col}{totals_start_row}'] = f"=SUMPRODUCT({bruto_col_letter}{start_row}:{bruto_col_letter}{end_row}, {librutiliz_col_letter}{start_row}:{librutiliz_col_letter}{end_row})"
+                # Total peso Bruto: SUMPRODUCT((MINUSC(N2:N100)<>"x")*(Bruto * LibrUtiliz))
+                worksheet[f'{total_value_col}{totals_start_row}'] = f"=SUMPRODUCT((LOWER($N${start_row}:$N${end_row})<>\"x\")*({bruto_col_letter}${start_row}:{bruto_col_letter}${end_row})*({librutiliz_col_letter}${start_row}:{librutiliz_col_letter}${end_row}))"
 
-                # Total peso Neto: SUMPRODUCT(Neto * LibrUtiliz)
-                worksheet[f'{total_value_col}{totals_start_row + 1}'] = f"=SUMPRODUCT({neto_col_letter}{start_row}:{neto_col_letter}{end_row}, {librutiliz_col_letter}{start_row}:{librutiliz_col_letter}{end_row})"
+                # Total peso Neto: SUMPRODUCT((MINUSC(N2:N100)<>"x")*(Neto * LibrUtiliz))
+                worksheet[f'{total_value_col}{totals_start_row + 1}'] = f"=SUMPRODUCT((LOWER($N${start_row}:$N${end_row})<>\"x\")*({neto_col_letter}${start_row}:{neto_col_letter}${end_row})*({librutiliz_col_letter}${start_row}:{librutiliz_col_letter}${end_row}))"
 
-                # Total Volumen: SUMPRODUCT(Volumen * LibrUtiliz)
-                worksheet[f'{total_value_col}{totals_start_row + 2}'] = f"=SUMPRODUCT({volumen_col_letter}{start_row}:{volumen_col_letter}{end_row}, {librutiliz_col_letter}{start_row}:{librutiliz_col_letter}{end_row})"
+                # Total Volumen: SUMPRODUCT((MINUSC(N2:N100)<>"x")*(Volumen * LibrUtiliz))
+                worksheet[f'{total_value_col}{totals_start_row + 2}'] = f"=SUMPRODUCT((LOWER($N${start_row}:$N${end_row})<>\"x\")*({volumen_col_letter}${start_row}:{volumen_col_letter}${end_row})*({librutiliz_col_letter}${start_row}:{librutiliz_col_letter}${end_row}))"
 
-                # Total Importe: SUMPRODUCT(Importe * Contador * LibrUtiliz)
-                worksheet[f'{total_value_col}{totals_start_row + 3}'] = f"=SUMPRODUCT({importe_col_letter}{start_row}:{importe_col_letter}{end_row}, {contador_col_letter}{start_row}:{contador_col_letter}{end_row}, {librutiliz_col_letter}{start_row}:{librutiliz_col_letter}{end_row})"
+                # Total Importe: SUMPRODUCT((MINUSC(N2:N100)<>"x")*(Importe * Contador * LibrUtiliz))
+                worksheet[f'{total_value_col}{totals_start_row + 3}'] = f"=SUMPRODUCT((LOWER($N${start_row}:$N${end_row})<>\"x\")*({importe_col_letter}${start_row}:{importe_col_letter}${end_row})*({contador_col_letter}${start_row}:{contador_col_letter}${end_row})*({librutiliz_col_letter}${start_row}:{librutiliz_col_letter}${end_row}))"
 
-                # Total LibrUtiliz: SUM(LibrUtiliz)
-                worksheet[f'{total_value_col}{totals_start_row + 4}'] = f"=SUM({librutiliz_col_letter}{start_row}:{librutiliz_col_letter}{end_row})"
-                # ---------------------------------------------------------------------------
+                # Total LibrUtiliz: SUMPRODUCT((MINUSC(N2:N100)<>"x")*(LibrUtiliz))
+                worksheet[f'{total_value_col}{totals_start_row + 4}'] = f"=SUMPRODUCT((LOWER($N${start_row}:$N${end_row})<>\"x\")*({librutiliz_col_letter}${start_row}:{librutiliz_col_letter}${end_row}))"
+
+                # Ajustar el ancho de la columna de los totales después de definir 'total_value_col'
+                length = max(len(str(cell.value)) if cell.value is not None else 0 for cell in worksheet[total_value_col])
+                adjusted_width = length + 2  # Ajuste para agregar un pequeño margen
+                worksheet.column_dimensions[total_value_col].width = adjusted_width
 
                 # Aplicar el color amarillo a las celdas de 'Volumen' donde 'Color_Volumen' es 'yellow'
                 fill_yellow = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')
@@ -152,7 +156,6 @@ def exportar_a_excel(contenedores_volumenes, mensajes_contenedores, df_final, co
         messagebox.showerror("Error de Exportación", f"Ocurrió un error al exportar: {e}")
         print(f"Error durante la exportación: {e}")
 
-
 def calcular_totales(df):
     # Asegurar que las columnas sean numéricas
     for col in ['Bruto', 'Neto', 'Volumen', 'Importe', 'LibrUtiliz', 'Contador']:
@@ -173,7 +176,6 @@ def calcular_totales(df):
         'Total Importe': total_importe,
         'Total LibrUtiliz': total_librUtiliz
     }
-
 
 def calcular_contenedores(df, columnas_mapeadas, capacidad_contenedor_max):
     # Ordenar el DataFrame por la columna 'Lote' de menor a mayor
@@ -245,90 +247,136 @@ def calcular_contenedores(df, columnas_mapeadas, capacidad_contenedor_max):
 
     return contenedores_volumenes, mensajes_contenedores
 
-
-
-def mostrar_resultados(totales, contenedores, mensajes_contenedores, df_final, columnas_mapeadas, capacidad_contenedor_max):
+def mostrar_resultados(totales, contenedores_volumenes, mensajes_contenedores, df_final, columnas_mapeadas, capacidad_contenedor_max):
     root = tk.Tk()
     root.title("Resultados de Contenedores")
-    root.geometry("1000x700")  # Ajuste del tamaño de la ventana
+    root.geometry("900x600")  # Ajuste del tamaño de la ventana
 
-    # Mostrar la tabla de totales
-    frame_totales = tk.Frame(root)
-    frame_totales.pack(pady=10)
+    # Configurar estilo
+    style = ttk.Style(root)
+    style.theme_use("clam")  # Puedes cambiar el tema según preferencia
 
-    tk.Label(frame_totales, text="Descripción", font=("Arial", 12, "bold")).grid(row=0, column=0, padx=10, pady=5)
-    tk.Label(frame_totales, text="Valor", font=("Arial", 12, "bold")).grid(row=0, column=1, padx=10, pady=5)
+    # Definir estilos personalizados
+    style.configure("Treeview.Heading", font=("Arial", 12, "bold"), background="#4CAF50", foreground="white")
+    style.configure("Treeview", font=("Arial", 11), rowheight=25, fieldbackground="#f0f0f0")
+    style.map("Treeview", background=[("selected", "#ADD8E6")], foreground=[("selected", "black")])
 
-    for i, (desc, valor) in enumerate(totales.items()):
-        tk.Label(frame_totales, text=desc, font=("Arial", 12)).grid(row=i+1, column=0, sticky='w', padx=10, pady=2)
-        tk.Label(frame_totales, text=str(valor), font=("Arial", 12)).grid(row=i+1, column=1, sticky='w', padx=10, pady=2)
+    # Frame para Totales
+    frame_totales = ttk.LabelFrame(root, text="Totales", padding=(20, 10))
+    frame_totales.pack(fill='x', padx=20, pady=10)
 
-    # Crear la tabla de contenedores
-    frame_contenedores = tk.Frame(root)
-    frame_contenedores.pack(pady=20, fill='both', expand=True)
+    # Treeview para Totales
+    columns_totales = ("Descripción", "Valor")
+    tree_totales = ttk.Treeview(frame_totales, columns=columns_totales, show="headings", height=5)
+    tree_totales.heading("Descripción", text="Descripción")
+    tree_totales.heading("Valor", text="Valor")
+    tree_totales.column("Descripción", anchor='w', width=200)
+    tree_totales.column("Valor", anchor='center', width=200)
 
-    tk.Label(frame_contenedores, text="Contenedores", font=("Arial", 14, "bold")).pack()
+    # Insertar datos de totales
+    for desc, valor in totales.items():
+        tree_totales.insert("", "end", values=(desc, f"{valor:,.2f}"))
 
-    tree = ttk.Treeview(frame_contenedores, columns=("Volumen"), show="headings", height=20)
-    tree.heading("Volumen", text="Volumen Total")
-    tree.column("Volumen", width=600, anchor='center')  # Ajuste del ancho de la columna
-    tree.pack(expand=True, fill='both')  # Ajuste para expandir el Treeview
+    # Scrollbar para Totales
+    scrollbar_totales = ttk.Scrollbar(frame_totales, orient="vertical", command=tree_totales.yview)
+    tree_totales.configure(yscroll=scrollbar_totales.set)
+    scrollbar_totales.pack(side='right', fill='y')
+    tree_totales.pack(fill='x')
 
-    for i, contenedor in enumerate(contenedores):
-        tree.insert("", "end", iid=i, values=(f"Contenedor {i+1}: {contenedor:.2f} unidades de volumen",))
+    # Frame para Contenedores
+    frame_contenedores = ttk.LabelFrame(root, text="Contenedores", padding=(20, 10))
+    frame_contenedores.pack(fill='both', expand=True, padx=20, pady=10)
+
+    # Treeview para Contenedores
+    columns_contenedores = ("Número de Contenedor", "Peso Neto (unidades)")
+    tree_contenedores = ttk.Treeview(frame_contenedores, columns=columns_contenedores, show="headings", height=9)
+    tree_contenedores.heading("Número de Contenedor", text="Número de Contenedor")
+    tree_contenedores.heading("Peso Neto (unidades)", text="Peso Neto (unidades)")
+
+    tree_contenedores.column("Número de Contenedor", anchor='center', width=200)
+    tree_contenedores.column("Peso Neto (unidades)", anchor='center', width=200)
+
+    # Insertar datos de contenedores
+    for i, contenedor in enumerate(contenedores_volumenes, start=1):
+        tree_contenedores.insert("", "end", iid=i-1, values=(f"Contenedor {i}", f"{contenedor:,.2f}"))
+
+    # Scrollbar para Contenedores
+    scrollbar_contenedores = ttk.Scrollbar(frame_contenedores, orient="vertical", command=tree_contenedores.yview)
+    tree_contenedores.configure(yscroll=scrollbar_contenedores.set)
+    scrollbar_contenedores.pack(side='right', fill='y')
+    tree_contenedores.pack(fill='both', expand=True)
 
     def on_select(event):
-        if not tree.selection():
-            return  # Si no hay ningún elemento seleccionado, salir de la función.
+        selected_item = tree_contenedores.selection()
+        if not selected_item:
+            return
 
-        selected_item = tree.selection()[0]
-        contenedor_index = int(selected_item)
+        contenedor_index = int(selected_item[0])
 
-        # Crear una nueva ventana para mostrar y mover los mensajes
+        # Crear una nueva ventana para mostrar los mensajes
         mensajes_ventana = tk.Toplevel(root)
         mensajes_ventana.title(f"Mensajes para Contenedor {contenedor_index + 1}")
-        mensajes_ventana.geometry("800x500")  # Ajuste del tamaño de la ventana de mensajes
+        mensajes_ventana.geometry("800x400")  # Ajuste del tamaño de la ventana de mensajes
 
-        mensajes_listbox = tk.Listbox(mensajes_ventana, selectmode=tk.MULTIPLE, width=100, height=25)
-        mensajes_listbox.pack(pady=10, padx=10, fill='both', expand=True)
+        # Configurar estilo para la nueva ventana
+        style_mensajes = ttk.Style(mensajes_ventana)
+        style_mensajes.theme_use("clam")
+        style_mensajes.configure("Treeview.Heading", font=("Arial", 12, "bold"), background="#2196F3", foreground="white")
+        style_mensajes.configure("Treeview", font=("Arial", 11), rowheight=25, fieldbackground="#f0f0f0")
+        style_mensajes.map("Treeview", background=[("selected", "#ADD8E6")], foreground=[("selected", "black")])
 
-        # Obtener los mensajes (índices únicos) y mostrarlos con detalles
+        # Frame para los mensajes
+        frame_mensajes = ttk.Frame(mensajes_ventana, padding=(20, 10))
+        frame_mensajes.pack(fill='both', expand=True)
+
+        # Treeview para Mensajes con todas las columnas
+        columnas_mensajes = list(columnas_mapeadas.keys())  # Asegúrate de que esto contenga las columnas necesarias
+        tree_mensajes = ttk.Treeview(frame_mensajes, columns=columnas_mensajes, show="headings", height=15)
+
+        # Definir encabezados y columnas
+        for col in columnas_mensajes:
+            tree_mensajes.heading(col, text=col)
+            tree_mensajes.column(col, anchor='center', width=150)
+
+        # Insertar datos de mensajes
         for mensaje_idx in mensajes_contenedores[contenedor_index]:
-            texto_mensaje = df_final.loc[mensaje_idx, 'Texto de mensaje']
-            nombre = df_final.loc[mensaje_idx, 'Nombre']
-            mensajes_listbox.insert(tk.END, f"{texto_mensaje} (Nombre: {nombre})")
+            mensaje = df_final.loc[mensaje_idx]
+            valores = [mensaje[col] for col in columnas_mensajes]
+            tree_mensajes.insert("", "end", values=valores)
+
+        # Scrollbar para Mensajes
+        scrollbar_mensajes = ttk.Scrollbar(frame_mensajes, orient="vertical", command=tree_mensajes.yview)
+        tree_mensajes.configure(yscroll=scrollbar_mensajes.set)
+        scrollbar_mensajes.pack(side='right', fill='y')
+        tree_mensajes.pack(fill='both', expand=True)
 
         def transferir_mensajes():
-            seleccionados = list(mensajes_listbox.curselection())
+            seleccionados = list(tree_mensajes.selection())
             if not seleccionados:
                 messagebox.showwarning("Sin Selección", "No se ha seleccionado ningún mensaje para transferir.")
                 return
 
-            destino_index = simpledialog.askinteger(
+            destino_num = simpledialog.askinteger(
                 "Transferir a Contenedor",
-                f"Seleccione el número del contenedor de destino (1-{len(contenedores)})",
-                minvalue=1, maxvalue=len(contenedores)
+                f"Seleccione el número del contenedor de destino (1-{len(contenedores_volumenes)})",
+                minvalue=1, maxvalue=len(contenedores_volumenes)
             )
 
-            if destino_index is None:
-                return  # Cancelado por el usuario
-            if destino_index == contenedor_index + 1:
-                messagebox.showwarning("Selección Inválida", "El contenedor de destino no puede ser el mismo que el de origen.")
+            if destino_num is None or destino_num == contenedor_index + 1:
                 return
 
-            destino_index -= 1  # Ajustar al índice basado en 0
+            destino_index = destino_num - 1
             volumen_a_transferir = 0
             mensajes_a_transferir = []
             mensajes_no_transferidos = []
 
-            # Asumimos que cada mensaje tiene un volumen específico
-            for i in seleccionados:
-                mensaje_seleccionado_idx = mensajes_contenedores[contenedor_index][i]
+            for item in seleccionados:
+                mensaje_seleccionado_idx = mensajes_contenedores[contenedor_index][int(item)]
                 volumen_mensaje = df_final.loc[mensaje_seleccionado_idx, 'Volumen_LibrUtiliz']
-                if contenedores[destino_index] + volumen_mensaje <= capacidad_contenedor_max:
+                if contenedores_volumenes[destino_index] + volumen_mensaje <= capacidad_contenedor_max:
                     volumen_a_transferir += volumen_mensaje
                     mensajes_a_transferir.append(mensaje_seleccionado_idx)
-                    contenedores[destino_index] += volumen_mensaje
+                    contenedores_volumenes[destino_index] += volumen_mensaje
                 else:
                     mensajes_no_transferidos.append(mensaje_seleccionado_idx)
 
@@ -336,7 +384,7 @@ def mostrar_resultados(totales, contenedores, mensajes_contenedores, df_final, c
             for mensaje in mensajes_a_transferir:
                 mensajes_contenedores[contenedor_index].remove(mensaje)
                 mensajes_contenedores[destino_index].append(mensaje)
-                contenedores[contenedor_index] -= df_final.loc[mensaje, 'Volumen_LibrUtiliz']
+                contenedores_volumenes[contenedor_index] -= df_final.loc[mensaje, 'Volumen_LibrUtiliz']
 
             # Mostrar advertencia si se alcanzó el límite
             if mensajes_no_transferidos:
@@ -345,26 +393,33 @@ def mostrar_resultados(totales, contenedores, mensajes_contenedores, df_final, c
                 messagebox.showwarning("Advertencia", advertencia)
 
             # Actualizar la interfaz
-            mensajes_listbox.delete(0, tk.END)
+            tree_mensajes.delete(*tree_mensajes.get_children())
             for mensaje_idx in mensajes_contenedores[contenedor_index]:
-                texto_mensaje = df_final.loc[mensaje_idx, 'Texto de mensaje']
-                nombre = df_final.loc[mensaje_idx, 'Nombre']
-                mensajes_listbox.insert(tk.END, f"{texto_mensaje} (Nombre: {nombre})")
+                mensaje = df_final.loc[mensaje_idx]
+                valores = [mensaje[col] for col in columnas_mensajes]
+                tree_mensajes.insert("", "end", values=valores)
 
-            tree.item(selected_item, values=(f"Contenedor {contenedor_index + 1}: {contenedores[contenedor_index]:.2f} unidades de volumen",))
-            tree.item(destino_index, values=(f"Contenedor {destino_index + 1}: {contenedores[destino_index]:.2f} unidades de volumen",))
+            # Actualizar Treeview de contenedores
+            tree_contenedores.item(selected_item, values=(f"Contenedor {contenedor_index + 1}", f"{contenedores_volumenes[contenedor_index]:,.2f}"))
+            tree_contenedores.item(destino_index, values=(f"Contenedor {destino_num}", f"{contenedores_volumenes[destino_index]:,.2f}"))
 
             # Si un contenedor queda vacío, poner su volumen a 0
             if len(mensajes_contenedores[contenedor_index]) == 0:
-                contenedores[contenedor_index] = 0
-                tree.item(selected_item, values=(f"Contenedor {contenedor_index + 1}: {contenedores[contenedor_index]:.2f} unidades de volumen",))
+                contenedores_volumenes[contenedor_index] = 0
+                tree_contenedores.item(selected_item, values=(f"Contenedor {contenedor_index + 1}", f"{contenedores_volumenes[contenedor_index]:,.2f}"))
 
-        tk.Button(mensajes_ventana, text="Transferir mensajes", command=transferir_mensajes).pack(pady=10)
+        # Botón para Transferir Mensajes
+        boton_transferir = ttk.Button(mensajes_ventana, text="Transferir mensajes", command=transferir_mensajes)
+        boton_transferir.pack(pady=10)
 
-    tree.bind("<<TreeviewSelect>>", on_select)
+    # Bind del evento de selección
+    tree_contenedores.bind("<<TreeviewSelect>>", on_select)
 
-    tk.Button(root, text="Exportar a Excel", command=lambda: exportar_a_excel(
-        contenedores, mensajes_contenedores, df_final, columnas_mapeadas, capacidad_contenedor_max)).pack(pady=10)
+    # Botón para Exportar a Excel
+    boton_exportar = ttk.Button(root, text="Exportar a Excel", command=lambda: exportar_a_excel(
+        contenedores_volumenes, mensajes_contenedores, df_final, columnas_mapeadas, capacidad_contenedor_max
+    ))
+    boton_exportar.pack(pady=10)
 
     # Verificación de integridad antes de iniciar el loop
     filas_asignadas = sum(len(mensajes) for mensajes in mensajes_contenedores)
@@ -376,7 +431,6 @@ def mostrar_resultados(totales, contenedores, mensajes_contenedores, df_final, c
         print("✅ Todas las filas han sido asignadas correctamente a contenedores.")
 
     root.mainloop()
-
 
 def main_proceso(df_final, columnas_mapeadas, capacidad_contenedor_max):
     # Verificar que 'Nombre' y 'Texto de mensaje' estén presentes
@@ -397,8 +451,9 @@ def main_proceso(df_final, columnas_mapeadas, capacidad_contenedor_max):
     totales = calcular_totales(df_final)
 
     # Mostrar resultados
-    mostrar_resultados(totales, contenedores_volumenes, mensajes_contenedores, df_final, columnas_mapeadas, capacidad_contenedor_max)
-
+    mostrar_resultados(
+        totales, contenedores_volumenes, mensajes_contenedores, df_final, columnas_mapeadas, capacidad_contenedor_max
+    )
 
 def cargar_datos(ruta_archivo):
     try:
@@ -410,15 +465,12 @@ def cargar_datos(ruta_archivo):
         print(f"❌ Error al cargar el archivo: {e}")
         return None
 
-
 def main():
     # Crear la ventana principal para seleccionar el archivo de datos
     root = tk.Tk()
     root.withdraw()  # Ocultar la ventana principal
 
     messagebox.showinfo("Seleccionar Archivo", "Seleccione el archivo Excel que contiene los datos.")
-
-    from tkinter import filedialog
 
     ruta_archivo = filedialog.askopenfilename(
         title="Seleccionar archivo Excel",
@@ -436,8 +488,15 @@ def main():
 
     # Definir las columnas mapeadas si es necesario (ejemplo)
     columnas_mapeadas = {
-        # 'columna_original': 'columna_mapeada',
-        # Añade tus mapeos aquí si los hay
+        'Material': 'Material',
+        'Texto de mensaje': 'Texto de mensaje',
+        'Bruto': 'Bruto',
+        'Neto': 'Neto',
+        'Volumen': 'Volumen',
+        'Importe': 'Importe',
+        'Cliente': 'Cliente',
+        'Nombre': 'Nombre',
+        'Contador': 'Contador'
     }
 
     # Definir la capacidad máxima del contenedor (ejemplo)
@@ -445,7 +504,6 @@ def main():
 
     # Llamar a la función principal de procesamiento
     main_proceso(df_final, columnas_mapeadas, capacidad_contenedor_max)
-
 
 if __name__ == "__main__":
     main()
