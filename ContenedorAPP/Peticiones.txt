@@ -27,3 +27,8 @@ Añadir una fila la cual se llame "Adición Referencias "
 
 
 Test: Peru, goya, dagec  
+
+
+*******NOTA*******
+
+Cuando el programa se ejecuta usando GCFOODS, a la hora de exportarlos la columna Lote aparecen todos los datos como NONE, arreglar eso
