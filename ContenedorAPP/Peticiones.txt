@@ -1,4 +1,5 @@
 Titulos: 
+
 1 cambiar libutiliz por cajas
 
 2 Cambiar los titulos a :  bg = azul claro y las letras en blanco
@@ -11,10 +12,10 @@ Info:
 
 Bruto : Peso bruto (kg)
 Neto: Peso neto (kg)
-Volumen (m3)
+Volumen : Volumen (m3)
 Importe : Valor FOB
-cambiar Doc.comer. por Pedido sin el .0
- mover libutiliz a la columa siguiente de Texto de mensaje 
+Doc.comer. :  Pedido
+LibrUtiliz : Cajas 
 
 
 Totales: 
@@ -26,9 +27,29 @@ Adicionales:
 Añadir una fila la cual se llame "Adición Referencias "
 
 
-Test: Peru, goya, dagec  
-
 
 *******NOTA*******
 
 Cuando el programa se ejecuta usando GCFOODS, a la hora de exportarlos la columna Lote aparecen todos los datos como NONE, arreglar eso
+
+
+
+Test:
+
+ Peru
+  goya
+   dagec  
+
+
+poner la multiplocacion ya hecha :
+
+Lo iba a hacer pero es una perdida de tiempo ya que de que sirve saber cual es el resultado sin saber que se está multiplicando,
+por ende si sequiere saber las multiplicaciones  basta con hacer un " = c*k "  y arrastrar la formula hasta donde se desea, literalmente 
+no se demora más de 2 minutos
+
+
+
+
+****NOTA****
+
+Todo funciona como debería funcionar excepto lo de la nota anterior, mañana arreglarlo

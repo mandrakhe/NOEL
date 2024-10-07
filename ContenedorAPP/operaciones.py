@@ -1,13 +1,29 @@
 # operaciones.py
 
 import os
-from tkinter import ttk
 import pandas as pd
 import tkinter as tk
+from tkinter import ttk
 from tkinter import messagebox, simpledialog, filedialog
-from openpyxl.styles import Font, PatternFill
-from natsort import natsort_keygen
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
+from natsort import natsort_keygen
+
+# ----------- DEFINIR EL MAPEO DE COLUMNAS GLOBALMENTE -----------
+# Definir el mapeo de nombres de columnas
+COLUMN_MAPPING = {
+    'Bruto': 'Peso bruto (kg)',
+    'Neto': 'Peso neto (kg)',
+    'Volumen': 'Volumen (m3)',
+    'Importe': 'Valor FOB',
+    'Doc.comer.': 'Pedido',
+    'LibrUtiliz': 'Cajas',
+    'Total peso Bruto': 'Total peso Bruto (kg)',
+    'Total peso Neto': 'Total peso Neto (kg)',
+    'Total Volumen': 'Total volumen',
+    'Total Importe': 'Ventas totales FOB',
+    'Total LibrUtiliz': 'Total Cajas'
+}
 
 def exportar_a_excel(contenedores_volumenes, mensajes_contenedores, df_final, columnas_mapeadas, capacidad_contenedor_max):
     try:
@@ -29,132 +45,137 @@ def exportar_a_excel(contenedores_volumenes, mensajes_contenedores, df_final, co
             filename = f'{base_filename}({version}).xlsx'
             filepath = os.path.join(desktop_path, filename)
 
-        # Crear la clave de ordenación natural
-        natsort_key = natsort_keygen()
-
         # Guardar el archivo en el escritorio
         with pd.ExcelWriter(filepath, engine='openpyxl') as writer:
             for i, (volumen_contenedor, mensajes) in enumerate(zip(contenedores_volumenes, mensajes_contenedores)):
                 # Filtrar los datos del contenedor actual utilizando índices únicos
                 df_contenedor = df_final.loc[mensajes].copy()
 
-                # Asegurar que las columnas sean numéricas
-                for col in ['Bruto', 'Neto', 'Volumen', 'Importe', 'LibrUtiliz', 'Contador']:
-                    if col in df_contenedor.columns:
-                        df_contenedor[col] = pd.to_numeric(df_contenedor[col], errors='coerce').fillna(0)
+                # Renombrar columnas según la solicitud
+                df_contenedor.rename(columns={
+                    'Bruto': 'Peso bruto (kg)',
+                    'Neto': 'Peso neto (kg)',
+                    'Volumen': 'Volumen (m3)',
+                    'Importe': 'Valor FOB',
+                    'Doc.comer.': 'Pedido',
+                    'LibrUtiliz': 'Cajas'
+                }, inplace=True)
 
-                # Asegurar que las columnas 'Lote' y 'Doc.comer.' sean de tipo string
-                if 'Lote' in df_contenedor.columns:
-                    df_contenedor['Lote'] = df_contenedor['Lote'].astype(str)
-                if 'Doc.comer.' in df_contenedor.columns:
-                    df_contenedor['Doc.comer.'] = df_contenedor['Doc.comer.'].astype(str)
-
-                # Crear una clave de ordenación natural para 'Lote'
-                if 'Lote' in df_contenedor.columns:
-                    df_contenedor['Lote_sort_key'] = df_contenedor['Lote'].map(natsort_key)
-
-                    # Ordenar df_contenedor por 'Doc.comer.' y luego por 'Lote' utilizando natsort
-                    df_contenedor.sort_values(by=['Doc.comer.', 'Lote_sort_key'], inplace=True)
-
-                    # Eliminar la columna auxiliar 'Lote_sort_key'
-                    df_contenedor.drop(columns=['Lote_sort_key'], inplace=True)
-
-                # Excluir 'Volumen_LibrUtiliz' y 'Color_Volumen' del export
-                columns_to_export = [col for col in df_contenedor.columns if col not in ['Volumen_LibrUtiliz', 'Color_Volumen']]
-
-                # Verificar que 'Nombre' esté incluido
-                if 'Nombre' not in columns_to_export:
-                    columns_to_export.append('Nombre')
-
-                # Guardar los datos del contenedor en una hoja de Excel sin las columnas excluidas
+                # Guardar los datos del contenedor en una hoja de Excel
                 hoja_nombre = f'Contenedor_{i+1}'
-                df_contenedor[columns_to_export].to_excel(writer, sheet_name=hoja_nombre, index=False)
+                df_contenedor.to_excel(writer, sheet_name=hoja_nombre, index=False)
                 print(f"Exportando {len(df_contenedor)} filas al archivo Excel en la hoja '{hoja_nombre}'.")
 
                 # Obtener el libro y la hoja de trabajo
                 workbook = writer.book
                 worksheet = writer.sheets[hoja_nombre]
 
-                # Forzar el cálculo automático de fórmulas
-                workbook.calcMode = 'auto'
+                # Desactivar las líneas de cuadrícula en la hoja
+                worksheet.sheet_view.showGridLines = False
 
-                # ----------- MODIFICACIÓN PARA UBICAR LOS TOTALES EN O Y P -----------
+                # ----------- APLICAR ESTILOS A ENCABEZADOS -----------
+                # Definir estilo para los encabezados: texto blanco, fondo azul, fuente tamaño 14
+                title_fill = PatternFill(start_color="0000FF", end_color="0000FF", fill_type="solid")
+                title_font = Font(color="FFFFFF", bold=True, size=14)
+                title_alignment = Alignment(horizontal="center", vertical="center")
+
+                # Aplicar estilos a los encabezados de columnas
+                for col in range(1, len(df_contenedor.columns) + 1):
+                    cell = worksheet.cell(row=1, column=col)
+                    cell.fill = title_fill
+                    cell.font = title_font
+                    cell.alignment = title_alignment
+
+                # ----------- FORMATO DE TOTALES -----------
                 # Definir las columnas fijas para los totales
                 total_label_col = 'O'
                 total_value_col = 'P'
 
-                # Crear una fuente en negrita
-                bold_font = Font(bold=True)
+                # Crear una fuente en negrita para los totales (texto negro)
+                bold_font_total = Font(bold=True, size=14)
+                alignment_total = Alignment(horizontal="center", vertical="center")
 
-                # Escribir los títulos de los totales
-                total_names = ['Total peso Bruto', 'Total peso Neto', 'Total Volumen', 'Total Importe', 'Total LibrUtiliz']
+                # Escribir los títulos de los totales en columna O y dejar P para los valores
+                total_names = [
+                    'Total peso Bruto (kg)', 
+                    'Total peso Neto (kg)', 
+                    'Total volumen', 
+                    'Ventas totales FOB', 
+                    'Total Cajas'
+                ]
                 totals_start_row = df_contenedor.shape[0] + 2  # Espacio debajo de los datos
+
                 for idx, total_name in enumerate(total_names):
                     cell_row = totals_start_row + idx
-                    worksheet[f'{total_label_col}{cell_row}'] = total_name
-                    worksheet[f'{total_label_col}{cell_row}'].font = bold_font
+                    label_cell = worksheet[f'{total_label_col}{cell_row}']
+                    value_cell = worksheet[f'{total_value_col}{cell_row}']
 
-                # Correspondencia de columnas para las fórmulas
-                bruto_col_idx = df_contenedor.columns.get_loc('Bruto') + 1
-                neto_col_idx = df_contenedor.columns.get_loc('Neto') + 1
-                volumen_col_idx = df_contenedor.columns.get_loc('Volumen') + 1
-                importe_col_idx = df_contenedor.columns.get_loc('Importe') + 1
-                contador_col_idx = df_contenedor.columns.get_loc('Contador') + 1
-                librutiliz_col_idx = df_contenedor.columns.get_loc('LibrUtiliz') + 1
+                    # Escribir el nombre del total en la columna O
+                    label_cell.value = total_name
+                    label_cell.font = bold_font_total
+                    label_cell.alignment = alignment_total
 
-                bruto_col_letter = get_column_letter(bruto_col_idx)
-                neto_col_letter = get_column_letter(neto_col_idx)
-                volumen_col_letter = get_column_letter(volumen_col_idx)
-                importe_col_letter = get_column_letter(importe_col_idx)
-                contador_col_letter = get_column_letter(contador_col_idx)
-                librutiliz_col_letter = get_column_letter(librutiliz_col_idx)
+                    # Escribir las fórmulas de los totales en la columna P (con las fórmulas originales)
+                    if total_name == 'Total peso Bruto (kg)':
+                        formula = f"=SUMPRODUCT((LOWER($N$2:$N${df_contenedor.shape[0]+1})<>\"x\")*({get_column_letter(df_contenedor.columns.get_loc('Peso bruto (kg)') + 1)}2:{get_column_letter(df_contenedor.columns.get_loc('Peso bruto (kg)') + 1)}{df_contenedor.shape[0]+1})*({get_column_letter(df_contenedor.columns.get_loc('Cajas') + 1)}2:{get_column_letter(df_contenedor.columns.get_loc('Cajas') + 1)}{df_contenedor.shape[0]+1}))"
+                    elif total_name == 'Total peso Neto (kg)':
+                        formula = f"=SUMPRODUCT((LOWER($N$2:$N${df_contenedor.shape[0]+1})<>\"x\")*({get_column_letter(df_contenedor.columns.get_loc('Peso neto (kg)') + 1)}2:{get_column_letter(df_contenedor.columns.get_loc('Peso neto (kg)') + 1)}{df_contenedor.shape[0]+1})*({get_column_letter(df_contenedor.columns.get_loc('Cajas') + 1)}2:{get_column_letter(df_contenedor.columns.get_loc('Cajas') + 1)}{df_contenedor.shape[0]+1}))"
+                    elif total_name == 'Total volumen':
+                        formula = f"=SUMPRODUCT((LOWER($N$2:$N${df_contenedor.shape[0]+1})<>\"x\")*({get_column_letter(df_contenedor.columns.get_loc('Volumen (m3)') + 1)}2:{get_column_letter(df_contenedor.columns.get_loc('Volumen (m3)') + 1)}{df_contenedor.shape[0]+1})*({get_column_letter(df_contenedor.columns.get_loc('Cajas') + 1)}2:{get_column_letter(df_contenedor.columns.get_loc('Cajas') + 1)}{df_contenedor.shape[0]+1}))"
+                    elif total_name == 'Ventas totales FOB':
+                        formula = f"=SUMPRODUCT((LOWER($N$2:$N${df_contenedor.shape[0]+1})<>\"x\")*({get_column_letter(df_contenedor.columns.get_loc('Valor FOB') + 1)}2:{get_column_letter(df_contenedor.columns.get_loc('Valor FOB') + 1)}{df_contenedor.shape[0]+1})*({get_column_letter(df_contenedor.columns.get_loc('Contador') + 1)}2:{get_column_letter(df_contenedor.columns.get_loc('Contador') + 1)}{df_contenedor.shape[0]+1})*({get_column_letter(df_contenedor.columns.get_loc('Cajas') + 1)}2:{get_column_letter(df_contenedor.columns.get_loc('Cajas') + 1)}{df_contenedor.shape[0]+1}))"
+                    elif total_name == 'Total Cajas':
+                        formula = f"=SUMPRODUCT((LOWER($N$2:$N${df_contenedor.shape[0]+1})<>\"x\")*({get_column_letter(df_contenedor.columns.get_loc('Cajas') + 1)}2:{get_column_letter(df_contenedor.columns.get_loc('Cajas') + 1)}{df_contenedor.shape[0]+1}))"
+                    else:
+                        formula = ""
 
-                # Definir el rango de las fórmulas desde la fila 2 hasta la última fila con datos
-                start_row = 2
-                end_row = df_contenedor.shape[0] + 1  # Ajustar al número real de filas
+                    value_cell.value = formula
+                    value_cell.font = bold_font_total
+                    value_cell.alignment = alignment_total
 
-                # Escribir las fórmulas de los totales
-                # Total peso Bruto: SUMPRODUCT((MINUSC(N2:N100)<>"x")*(Bruto * LibrUtiliz))
-                worksheet[f'{total_value_col}{totals_start_row}'] = f"=SUMPRODUCT((LOWER($N${start_row}:$N${end_row})<>\"x\")*({bruto_col_letter}${start_row}:{bruto_col_letter}${end_row})*({librutiliz_col_letter}${start_row}:{librutiliz_col_letter}${end_row}))"
+                # ----------- ENCABEZADO EN CELDA N1 -----------
+                worksheet['N1'] = 'Omitido'
+                cell_n1 = worksheet['N1']
+                cell_n1.fill = PatternFill(start_color="0000FF", end_color="0000FF", fill_type="solid")
+                cell_n1.font = Font(color="FFFFFF", bold=True, size=14)
+                cell_n1.alignment = Alignment(horizontal="center", vertical="center")
 
-                # Total peso Neto: SUMPRODUCT((MINUSC(N2:N100)<>"x")*(Neto * LibrUtiliz))
-                worksheet[f'{total_value_col}{totals_start_row + 1}'] = f"=SUMPRODUCT((LOWER($N${start_row}:$N${end_row})<>\"x\")*({neto_col_letter}${start_row}:{neto_col_letter}${end_row})*({librutiliz_col_letter}${start_row}:{librutiliz_col_letter}${end_row}))"
+                # ----------- AGREGAR "Adición Referencias" DOS FILAS ABAJO DEL FINAL -----------
+                addition_row = totals_start_row + len(total_names) + 2  # Dos filas más abajo
+                worksheet.merge_cells(f'A{addition_row}:M{addition_row}')  # Combinar celdas de A a M
+                cell_addition = worksheet[f'A{addition_row}']
+                cell_addition.value = "Adición Referencias"
+                cell_addition.alignment = Alignment(horizontal="center", vertical="center")
+                cell_addition.fill = PatternFill(start_color="ADD8E6", end_color="ADD8E6", fill_type="solid")  # Azul claro
+                cell_addition.font = Font(bold=True)
 
-                # Total Volumen: SUMPRODUCT((MINUSC(N2:N100)<>"x")*(Volumen * LibrUtiliz))
-                worksheet[f'{total_value_col}{totals_start_row + 2}'] = f"=SUMPRODUCT((LOWER($N${start_row}:$N${end_row})<>\"x\")*({volumen_col_letter}${start_row}:{volumen_col_letter}${end_row})*({librutiliz_col_letter}${start_row}:{librutiliz_col_letter}${end_row}))"
-
-                # Total Importe: SUMPRODUCT((MINUSC(N2:N100)<>"x")*(Importe * Contador * LibrUtiliz))
-                worksheet[f'{total_value_col}{totals_start_row + 3}'] = f"=SUMPRODUCT((LOWER($N${start_row}:$N${end_row})<>\"x\")*({importe_col_letter}${start_row}:{importe_col_letter}${end_row})*({contador_col_letter}${start_row}:{contador_col_letter}${end_row})*({librutiliz_col_letter}${start_row}:{librutiliz_col_letter}${end_row}))"
-
-                # Total LibrUtiliz: SUMPRODUCT((MINUSC(N2:N100)<>"x")*(LibrUtiliz))
-                worksheet[f'{total_value_col}{totals_start_row + 4}'] = f"=SUMPRODUCT((LOWER($N${start_row}:$N${end_row})<>\"x\")*({librutiliz_col_letter}${start_row}:{librutiliz_col_letter}${end_row}))"
-
-                # Ajustar el ancho de la columna de los totales después de definir 'total_value_col'
-                length = max(len(str(cell.value)) if cell.value is not None else 0 for cell in worksheet[total_value_col])
-                adjusted_width = length + 2  # Ajuste para agregar un pequeño margen
-                worksheet.column_dimensions[total_value_col].width = adjusted_width
-
-                # Aplicar el color amarillo a las celdas de 'Volumen' donde 'Color_Volumen' es 'yellow'
-                fill_yellow = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')
-                for idx, row in enumerate(df_contenedor.itertuples(), start=2):
-                    # Verificar si 'Color_Volumen' es 'yellow' para la fila actual
-                    if hasattr(row, 'Color_Volumen') and getattr(row, 'Color_Volumen') == 'yellow':
-                        worksheet[f'{volumen_col_letter}{idx}'].fill = fill_yellow
+                # ----------- AJUSTAR ANCHO DE COLUMNAS AUTOMÁTICAMENTE -----------
+                for col in worksheet.columns:
+                    max_length = 0
+                    column = col[0].column_letter  # Obtener la letra de la columna
+                    for cell in col:
+                        try:
+                            cell_length = len(str(cell.value))
+                            if cell_length > max_length:
+                                max_length = cell_length
+                        except:
+                            pass
+                    adjusted_width = (max_length + 2) * 1.2  # Ajuste de margen
+                    worksheet.column_dimensions[column].width = adjusted_width
 
         # Verificar que todas las filas hayan sido exportadas
         filas_exportadas = sum(len(mensajes) for mensajes in mensajes_contenedores)
         total_filas = df_final.shape[0]
         if filas_exportadas != total_filas:
-            messagebox.showerror("Error de Exportación", f"Se han exportado {filas_exportadas} filas, pero el total es {total_filas}.")
             print(f"⚠️ Error de Exportación: Se han exportado {filas_exportadas} filas, pero el total es {total_filas}.")
         else:
             print("✅ Todas las filas han sido exportadas correctamente a Excel.")
-            messagebox.showinfo("Exportación exitosa", f"Los contenedores se han exportado a '{filename}' en el escritorio.")
             print(f"Exportación completada: {filename}")
 
     except Exception as e:
-        messagebox.showerror("Error de Exportación", f"Ocurrió un error al exportar: {e}")
         print(f"Error durante la exportación: {e}")
+
+
 
 def calcular_totales(df):
     # Asegurar que las columnas sean numéricas
@@ -257,8 +278,8 @@ def mostrar_resultados(totales, contenedores_volumenes, mensajes_contenedores, d
     style.theme_use("clam")  # Puedes cambiar el tema según preferencia
 
     # Definir estilos personalizados
-    style.configure("Treeview.Heading", font=("Arial", 12, "bold"), background="#4CAF50", foreground="white")
-    style.configure("Treeview", font=("Arial", 11), rowheight=25, fieldbackground="#f0f0f0")
+    style.configure("Treeview.Heading", font=("Arial", 14, "bold"), background="#0000FF", foreground="white")
+    style.configure("Treeview", font=("Arial", 14), rowheight=30, fieldbackground="#f0f0f0")
     style.map("Treeview", background=[("selected", "#ADD8E6")], foreground=[("selected", "black")])
 
     # Frame para Totales
@@ -270,12 +291,14 @@ def mostrar_resultados(totales, contenedores_volumenes, mensajes_contenedores, d
     tree_totales = ttk.Treeview(frame_totales, columns=columns_totales, show="headings", height=5)
     tree_totales.heading("Descripción", text="Descripción")
     tree_totales.heading("Valor", text="Valor")
-    tree_totales.column("Descripción", anchor='w', width=200)
-    tree_totales.column("Valor", anchor='center', width=200)
+    tree_totales.column("Descripción", anchor='w', width=300)
+    tree_totales.column("Valor", anchor='center', width=300)
 
     # Insertar datos de totales
     for desc, valor in totales.items():
-        tree_totales.insert("", "end", values=(desc, f"{valor:,.2f}"))
+        # Usar el mapeo para los nombres de totales
+        desc_mapeado = COLUMN_MAPPING.get(desc, desc)
+        tree_totales.insert("", "end", values=(desc_mapeado, f"{valor:,.2f}"))
 
     # Scrollbar para Totales
     scrollbar_totales = ttk.Scrollbar(frame_totales, orient="vertical", command=tree_totales.yview)
@@ -289,12 +312,12 @@ def mostrar_resultados(totales, contenedores_volumenes, mensajes_contenedores, d
 
     # Treeview para Contenedores
     columns_contenedores = ("Número de Contenedor", "Peso Neto (unidades)")
-    tree_contenedores = ttk.Treeview(frame_contenedores, columns=columns_contenedores, show="headings", height=9)
+    tree_contenedores = ttk.Treeview(frame_contenedores, columns=columns_contenedores, show="headings", height=15)
     tree_contenedores.heading("Número de Contenedor", text="Número de Contenedor")
     tree_contenedores.heading("Peso Neto (unidades)", text="Peso Neto (unidades)")
 
-    tree_contenedores.column("Número de Contenedor", anchor='center', width=200)
-    tree_contenedores.column("Peso Neto (unidades)", anchor='center', width=200)
+    tree_contenedores.column("Número de Contenedor", anchor='center', width=300)
+    tree_contenedores.column("Peso Neto (unidades)", anchor='center', width=300)
 
     # Insertar datos de contenedores
     for i, contenedor in enumerate(contenedores_volumenes, start=1):
@@ -321,8 +344,8 @@ def mostrar_resultados(totales, contenedores_volumenes, mensajes_contenedores, d
         # Configurar estilo para la nueva ventana
         style_mensajes = ttk.Style(mensajes_ventana)
         style_mensajes.theme_use("clam")
-        style_mensajes.configure("Treeview.Heading", font=("Arial", 12, "bold"), background="#2196F3", foreground="white")
-        style_mensajes.configure("Treeview", font=("Arial", 11), rowheight=25, fieldbackground="#f0f0f0")
+        style_mensajes.configure("Treeview.Heading", font=("Arial", 14, "bold"), background="#0000FF", foreground="white")
+        style_mensajes.configure("Treeview", font=("Arial", 14), rowheight=30, fieldbackground="#f0f0f0")
         style_mensajes.map("Treeview", background=[("selected", "#ADD8E6")], foreground=[("selected", "black")])
 
         # Frame para los mensajes
@@ -335,7 +358,9 @@ def mostrar_resultados(totales, contenedores_volumenes, mensajes_contenedores, d
 
         # Definir encabezados y columnas
         for col in columnas_mensajes:
-            tree_mensajes.heading(col, text=col)
+            # Usar el mapeo para los encabezados
+            encabezado = COLUMN_MAPPING.get(col, col)
+            tree_mensajes.heading(col, text=encabezado)
             tree_mensajes.column(col, anchor='center', width=150)
 
         # Insertar datos de mensajes
@@ -488,15 +513,17 @@ def main():
 
     # Definir las columnas mapeadas si es necesario (ejemplo)
     columnas_mapeadas = {
-        'Material': 'Material',
-        'Texto de mensaje': 'Texto de mensaje',
-        'Bruto': 'Bruto',
-        'Neto': 'Neto',
-        'Volumen': 'Volumen',
-        'Importe': 'Importe',
-        'Cliente': 'Cliente',
-        'Nombre': 'Nombre',
-        'Contador': 'Contador'
+    'Bruto': 'Peso bruto (kg)',
+    'Neto': 'Peso neto (kg)',
+    'Volumen': 'Volumen (m3)',
+    'Importe': 'Valor FOB',
+    'Doc.comer.': 'Pedido',
+    'LibrUtiliz': 'Cajas',
+    'Total peso Bruto': 'Total peso Bruto (kg)',
+    'Total peso Neto': 'Total peso Neto (kg)',
+    'Total Volumen': 'Total volumen',
+    'Total Importe': 'Ventas totales FOB',
+    'Total LibrUtiliz': 'Total Cajas'
     }
 
     # Definir la capacidad máxima del contenedor (ejemplo)
@@ -507,3 +534,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# ajsjdasdsdaasadadsaasa

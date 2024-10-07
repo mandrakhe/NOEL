@@ -1,3 +1,5 @@
+#main.py
+
 from interfaz import Interfaz
 
 def main():

@@ -1534,9 +1534,3 @@ if __name__ == "__main__":
     main()
 
 
-Total peso Bruto :::: =SUMAPRODUCTO((MINUSC(N2:N100)<>"x")*(C2:C100)*(K2:K100))
-Total peso Neto ::::  =SUMAPRODUCTO((MINUSC(N2:N100)<>"x")*(D2:D100)*(K2:K100))
-Total Volumen ::::    =SUMAPRODUCTO((MINUSC(N2:N100)<>"x")*(E2:E100)*(K2:K100))
-Total Importe ::::    =SUMAPRODUCTO((MINUSC(N2:N100)<>"x")*(F2:F100)*(I2:I100)*(K2:K100))
-Total LibrUtiliz :::: =SUMAPRODUCTO((MINUSC(N2:N100)<>"x")*(K2:K100))
-
