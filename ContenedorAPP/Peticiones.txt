@@ -1,30 +1,30 @@
 Titulos: 
 
-1 cambiar libutiliz por cajas
+1 cambiar libutiliz por cajas == Listo
 
-2 Cambiar los titulos a :  bg = azul claro y las letras en blanco
+2 Cambiar los titulos a :  bg = azul claro y las letras en blanco == Listo
 
-3 Agrandar la fuente de letra
+3 Agrandar la fuente de letra == Listo
 
-4 quitar las lineas de excel 
+4 quitar las lineas de excel  == Listo
 
 Info:  
 
-Bruto : Peso bruto (kg)
-Neto: Peso neto (kg)
-Volumen : Volumen (m3)
-Importe : Valor FOB
-Doc.comer. :  Pedido
-LibrUtiliz : Cajas 
+Bruto : Peso bruto (kg) == Listo
+Neto: Peso neto (kg) == Listo
+Volumen : Volumen (m3) == Listo
+Importe : Valor FOB == Listo
+Doc.comer. :  Pedido == Listo
+LibrUtiliz : Cajas  == Listo
 
 
 Totales: 
-a bruto y a neto ponerles el kg, importe sería "Ventas totales FOB" y Total cajas
+a bruto y a neto ponerles el kg, importe sería "Ventas totales FOB" y Total cajas == Listo
 
 
 Adicionales:
-
-Añadir una fila la cual se llame "Adición Referencias "
+ 
+Añadir una fila la cual se llame "Adición Referencias " == Listo
 
 
 
@@ -41,15 +41,16 @@ Test:
    dagec  
 
 
+****NOTA****
+
+Todo funciona como debería funcionar excepto lo de la nota anterior, mañana arreglarlo
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 poner la multiplocacion ya hecha :
 
 Lo iba a hacer pero es una perdida de tiempo ya que de que sirve saber cual es el resultado sin saber que se está multiplicando,
 por ende si sequiere saber las multiplicaciones  basta con hacer un " = c*k "  y arrastrar la formula hasta donde se desea, literalmente 
 no se demora más de 2 minutos
-
-
-
-
-****NOTA****
-
-Todo funciona como debería funcionar excepto lo de la nota anterior, mañana arreglarlo

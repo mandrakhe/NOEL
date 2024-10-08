@@ -7,6 +7,7 @@ from tkinter import ttk
 from tkinter import messagebox, simpledialog, filedialog
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
+from openpyxl import load_workbook
 from natsort import natsort_keygen
 
 # ----------- DEFINIR EL MAPEO DE COLUMNAS GLOBALMENTE -----------
@@ -25,33 +26,27 @@ COLUMN_MAPPING = {
     'Total LibrUtiliz': 'Total Cajas'
 }
 
-def exportar_a_excel(contenedores_volumenes, mensajes_contenedores, df_final, columnas_mapeadas, capacidad_contenedor_max):
+def exportar_a_excel(contenedores_volumenes, mensajes_contenedores, df_final, columnas_mapeadas):
     try:
-        # Obtener la ruta del escritorio dependiendo del sistema operativo
         if os.name == 'nt':  # Para Windows
             desktop_path = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
         else:  # Para macOS y Linux
             desktop_path = os.path.join(os.path.expanduser('~'), 'Desktop')
 
-        # Definir el nombre base del archivo
         base_filename = 'contenedores_exportados'
         version = 1
         filename = f'{base_filename}({version}).xlsx'
         filepath = os.path.join(desktop_path, filename)
 
-        # Incrementar el número de versión si el archivo ya existe
         while os.path.exists(filepath):
             version += 1
             filename = f'{base_filename}({version}).xlsx'
             filepath = os.path.join(desktop_path, filename)
 
-        # Guardar el archivo en el escritorio
         with pd.ExcelWriter(filepath, engine='openpyxl') as writer:
             for i, (volumen_contenedor, mensajes) in enumerate(zip(contenedores_volumenes, mensajes_contenedores)):
-                # Filtrar los datos del contenedor actual utilizando índices únicos
                 df_contenedor = df_final.loc[mensajes].copy()
 
-                # Renombrar columnas según la solicitud
                 df_contenedor.rename(columns={
                     'Bruto': 'Peso bruto (kg)',
                     'Neto': 'Peso neto (kg)',
@@ -61,98 +56,105 @@ def exportar_a_excel(contenedores_volumenes, mensajes_contenedores, df_final, co
                     'LibrUtiliz': 'Cajas'
                 }, inplace=True)
 
-                # Guardar los datos del contenedor en una hoja de Excel
+                # Asegurarse de que la columna 'Omitido' existe
+                if 'Omitido' not in df_contenedor.columns:
+                    df_contenedor['Omitido'] = ''
+
+                # Reordenar las columnas
+                columnas_ordenadas = ['Material', 'Texto de mensaje', 'Cajas', 'Peso bruto (kg)', 'Peso neto (kg)',
+                                      'Volumen (m3)', 'Valor FOB', 'Cliente', 'Nombre', 'Contador', 'Pedido',
+                                      'Grupo', 'Lote', 'Omitido']
+
+                # Verificar que todas las columnas existen en df_contenedor
+                columnas_existentes = [col for col in columnas_ordenadas if col in df_contenedor.columns]
+                df_contenedor = df_contenedor[columnas_existentes]
+
                 hoja_nombre = f'Contenedor_{i+1}'
                 df_contenedor.to_excel(writer, sheet_name=hoja_nombre, index=False)
-                print(f"Exportando {len(df_contenedor)} filas al archivo Excel en la hoja '{hoja_nombre}'.")
 
-                # Obtener el libro y la hoja de trabajo
                 workbook = writer.book
                 worksheet = writer.sheets[hoja_nombre]
 
-                # Desactivar las líneas de cuadrícula en la hoja
                 worksheet.sheet_view.showGridLines = False
 
-                # ----------- APLICAR ESTILOS A ENCABEZADOS -----------
-                # Definir estilo para los encabezados: texto blanco, fondo azul, fuente tamaño 14
                 title_fill = PatternFill(start_color="0000FF", end_color="0000FF", fill_type="solid")
                 title_font = Font(color="FFFFFF", bold=True, size=14)
                 title_alignment = Alignment(horizontal="center", vertical="center")
 
-                # Aplicar estilos a los encabezados de columnas
                 for col in range(1, len(df_contenedor.columns) + 1):
                     cell = worksheet.cell(row=1, column=col)
                     cell.fill = title_fill
                     cell.font = title_font
                     cell.alignment = title_alignment
 
-                # ----------- FORMATO DE TOTALES -----------
-                # Definir las columnas fijas para los totales
-                total_label_col = 'O'
-                total_value_col = 'P'
+                # Si la columna 'Omitido' existe, configurar su encabezado y estilo
+                if 'Omitido' in df_contenedor.columns:
+                    col_idx = df_contenedor.columns.get_loc('Omitido') + 1  # Índice basado en 1 para openpyxl
+                    cell = worksheet.cell(row=1, column=col_idx)
+                    cell.value = 'Omitido'
+                    cell.fill = title_fill
+                    cell.font = title_font
+                    cell.alignment = title_alignment
 
-                # Crear una fuente en negrita para los totales (texto negro)
+                total_label_col = 'O'  # Columna 15 (O)
+                total_value_col = 'P'  # Columna 16 (P)
+
                 bold_font_total = Font(bold=True, size=14)
                 alignment_total = Alignment(horizontal="center", vertical="center")
 
-                # Escribir los títulos de los totales en columna O y dejar P para los valores
                 total_names = [
-                    'Total peso Bruto (kg)', 
-                    'Total peso Neto (kg)', 
-                    'Total volumen', 
-                    'Ventas totales FOB', 
+                    'Total peso Bruto (kg)',
+                    'Total peso Neto (kg)',
+                    'Total volumen',
+                    'Ventas totales FOB',
                     'Total Cajas'
                 ]
-                totals_start_row = df_contenedor.shape[0] + 2  # Espacio debajo de los datos
+                totals_start_row = df_contenedor.shape[0] + 2
 
                 for idx, total_name in enumerate(total_names):
                     cell_row = totals_start_row + idx
                     label_cell = worksheet[f'{total_label_col}{cell_row}']
                     value_cell = worksheet[f'{total_value_col}{cell_row}']
 
-                    # Escribir el nombre del total en la columna O
                     label_cell.value = total_name
                     label_cell.font = bold_font_total
                     label_cell.alignment = alignment_total
 
-                    # Escribir las fórmulas de los totales en la columna P (con las fórmulas originales)
+                    # Actualizar las fórmulas con el número correcto de filas
+                    end_row = 100
                     if total_name == 'Total peso Bruto (kg)':
-                        formula = f"=SUMPRODUCT((LOWER($N$2:$N${df_contenedor.shape[0]+1})<>\"x\")*({get_column_letter(df_contenedor.columns.get_loc('Peso bruto (kg)') + 1)}2:{get_column_letter(df_contenedor.columns.get_loc('Peso bruto (kg)') + 1)}{df_contenedor.shape[0]+1})*({get_column_letter(df_contenedor.columns.get_loc('Cajas') + 1)}2:{get_column_letter(df_contenedor.columns.get_loc('Cajas') + 1)}{df_contenedor.shape[0]+1}))"
+                        formula = f"=SUMPRODUCT((LOWER(${get_column_letter(df_contenedor.columns.get_loc('Omitido') + 1)}$2:${get_column_letter(df_contenedor.columns.get_loc('Omitido') + 1)}${end_row})<>\"x\")*(${get_column_letter(df_contenedor.columns.get_loc('Peso bruto (kg)') + 1)}2:${get_column_letter(df_contenedor.columns.get_loc('Peso bruto (kg)') + 1)}{end_row})*(${get_column_letter(df_contenedor.columns.get_loc('Cajas') + 1)}2:${get_column_letter(df_contenedor.columns.get_loc('Cajas') + 1)}{end_row}))"
                     elif total_name == 'Total peso Neto (kg)':
-                        formula = f"=SUMPRODUCT((LOWER($N$2:$N${df_contenedor.shape[0]+1})<>\"x\")*({get_column_letter(df_contenedor.columns.get_loc('Peso neto (kg)') + 1)}2:{get_column_letter(df_contenedor.columns.get_loc('Peso neto (kg)') + 1)}{df_contenedor.shape[0]+1})*({get_column_letter(df_contenedor.columns.get_loc('Cajas') + 1)}2:{get_column_letter(df_contenedor.columns.get_loc('Cajas') + 1)}{df_contenedor.shape[0]+1}))"
+                        formula = f"=SUMPRODUCT((LOWER(${get_column_letter(df_contenedor.columns.get_loc('Omitido') + 1)}$2:${get_column_letter(df_contenedor.columns.get_loc('Omitido') + 1)}${end_row})<>\"x\")*(${get_column_letter(df_contenedor.columns.get_loc('Peso neto (kg)') + 1)}2:${get_column_letter(df_contenedor.columns.get_loc('Peso neto (kg)') + 1)}{end_row})*(${get_column_letter(df_contenedor.columns.get_loc('Cajas') + 1)}2:${get_column_letter(df_contenedor.columns.get_loc('Cajas') + 1)}{end_row}))"
                     elif total_name == 'Total volumen':
-                        formula = f"=SUMPRODUCT((LOWER($N$2:$N${df_contenedor.shape[0]+1})<>\"x\")*({get_column_letter(df_contenedor.columns.get_loc('Volumen (m3)') + 1)}2:{get_column_letter(df_contenedor.columns.get_loc('Volumen (m3)') + 1)}{df_contenedor.shape[0]+1})*({get_column_letter(df_contenedor.columns.get_loc('Cajas') + 1)}2:{get_column_letter(df_contenedor.columns.get_loc('Cajas') + 1)}{df_contenedor.shape[0]+1}))"
+                        formula = f"=SUMPRODUCT((LOWER(${get_column_letter(df_contenedor.columns.get_loc('Omitido') + 1)}$2:${get_column_letter(df_contenedor.columns.get_loc('Omitido') + 1)}${end_row})<>\"x\")*(${get_column_letter(df_contenedor.columns.get_loc('Volumen (m3)') + 1)}2:${get_column_letter(df_contenedor.columns.get_loc('Volumen (m3)') + 1)}{end_row})*(${get_column_letter(df_contenedor.columns.get_loc('Cajas') + 1)}2:${get_column_letter(df_contenedor.columns.get_loc('Cajas') + 1)}{end_row}))"
                     elif total_name == 'Ventas totales FOB':
-                        formula = f"=SUMPRODUCT((LOWER($N$2:$N${df_contenedor.shape[0]+1})<>\"x\")*({get_column_letter(df_contenedor.columns.get_loc('Valor FOB') + 1)}2:{get_column_letter(df_contenedor.columns.get_loc('Valor FOB') + 1)}{df_contenedor.shape[0]+1})*({get_column_letter(df_contenedor.columns.get_loc('Contador') + 1)}2:{get_column_letter(df_contenedor.columns.get_loc('Contador') + 1)}{df_contenedor.shape[0]+1})*({get_column_letter(df_contenedor.columns.get_loc('Cajas') + 1)}2:{get_column_letter(df_contenedor.columns.get_loc('Cajas') + 1)}{df_contenedor.shape[0]+1}))"
+                        formula = f"=SUMPRODUCT((LOWER(${get_column_letter(df_contenedor.columns.get_loc('Omitido') + 1)}$2:${get_column_letter(df_contenedor.columns.get_loc('Omitido') + 1)}${end_row})<>\"x\")*(${get_column_letter(df_contenedor.columns.get_loc('Valor FOB') + 1)}2:${get_column_letter(df_contenedor.columns.get_loc('Valor FOB') + 1)}{end_row})*(${get_column_letter(df_contenedor.columns.get_loc('Contador') + 1)}2:${get_column_letter(df_contenedor.columns.get_loc('Contador') + 1)}{end_row})*(${get_column_letter(df_contenedor.columns.get_loc('Cajas') + 1)}2:${get_column_letter(df_contenedor.columns.get_loc('Cajas') + 1)}{end_row}))"
                     elif total_name == 'Total Cajas':
-                        formula = f"=SUMPRODUCT((LOWER($N$2:$N${df_contenedor.shape[0]+1})<>\"x\")*({get_column_letter(df_contenedor.columns.get_loc('Cajas') + 1)}2:{get_column_letter(df_contenedor.columns.get_loc('Cajas') + 1)}{df_contenedor.shape[0]+1}))"
-                    else:
-                        formula = ""
+                        formula = f"=SUMPRODUCT((LOWER(${get_column_letter(df_contenedor.columns.get_loc('Omitido') + 1)}$2:${get_column_letter(df_contenedor.columns.get_loc('Omitido') + 1)}${end_row})<>\"x\")*(${get_column_letter(df_contenedor.columns.get_loc('Cajas') + 1)}2:${get_column_letter(df_contenedor.columns.get_loc('Cajas') + 1)}{end_row}))"
 
                     value_cell.value = formula
                     value_cell.font = bold_font_total
                     value_cell.alignment = alignment_total
 
-                # ----------- ENCABEZADO EN CELDA N1 -----------
-                worksheet['N1'] = 'Omitido'
-                cell_n1 = worksheet['N1']
-                cell_n1.fill = PatternFill(start_color="0000FF", end_color="0000FF", fill_type="solid")
-                cell_n1.font = Font(color="FFFFFF", bold=True, size=14)
-                cell_n1.alignment = Alignment(horizontal="center", vertical="center")
+                # Agregar la fila combinada "Adición De Referencias"
+                merged_row = totals_start_row + len(total_names) + 2  # Dos filas debajo de los totales
+                worksheet.merge_cells(start_row=merged_row, start_column=1, end_row=merged_row, end_column=13)  # Columnas A (1) a M (13)
+                merged_cell = worksheet.cell(row=merged_row, column=1)
+                merged_cell.value = 'Adición De Referencias'
+                merged_cell.alignment = Alignment(horizontal='center', vertical='center')
+                merged_cell.font = Font(bold=True, size=14)
 
-                # ----------- AGREGAR "Adición Referencias" DOS FILAS ABAJO DEL FINAL -----------
-                addition_row = totals_start_row + len(total_names) + 2  # Dos filas más abajo
-                worksheet.merge_cells(f'A{addition_row}:M{addition_row}')  # Combinar celdas de A a M
-                cell_addition = worksheet[f'A{addition_row}']
-                cell_addition.value = "Adición Referencias"
-                cell_addition.alignment = Alignment(horizontal="center", vertical="center")
-                cell_addition.fill = PatternFill(start_color="ADD8E6", end_color="ADD8E6", fill_type="solid")  # Azul claro
-                cell_addition.font = Font(bold=True)
+                # Establecer el color violeta claro
+                violet_fill = PatternFill(start_color="E1BEE7", end_color="E1BEE7", fill_type="solid")
+                for col in range(1, 14):  # Columnas A (1) a M (13)
+                    cell = worksheet.cell(row=merged_row, column=col)
+                    cell.fill = violet_fill
 
-                # ----------- AJUSTAR ANCHO DE COLUMNAS AUTOMÁTICAMENTE -----------
+                # Ajustar el ancho de las columnas
                 for col in worksheet.columns:
                     max_length = 0
-                    column = col[0].column_letter  # Obtener la letra de la columna
+                    column = col[0].column_letter
                     for cell in col:
                         try:
                             cell_length = len(str(cell.value))
@@ -160,22 +162,18 @@ def exportar_a_excel(contenedores_volumenes, mensajes_contenedores, df_final, co
                                 max_length = cell_length
                         except:
                             pass
-                    adjusted_width = (max_length + 2) * 1.2  # Ajuste de margen
+                    adjusted_width = (max_length + 2) * 1.2
                     worksheet.column_dimensions[column].width = adjusted_width
 
-        # Verificar que todas las filas hayan sido exportadas
         filas_exportadas = sum(len(mensajes) for mensajes in mensajes_contenedores)
         total_filas = df_final.shape[0]
         if filas_exportadas != total_filas:
             print(f"⚠️ Error de Exportación: Se han exportado {filas_exportadas} filas, pero el total es {total_filas}.")
         else:
-            print("✅ Todas las filas han sido exportadas correctamente a Excel.")
-            print(f"Exportación completada: {filename}")
+            print(f"✅ Todas las filas han sido exportadas correctamente a Excel: {filename}")
 
     except Exception as e:
-        print(f"Error durante la exportación: {e}")
-
-
+        print(f"Error durante la exportación: {str(e)}")
 
 def calcular_totales(df):
     # Asegurar que las columnas sean numéricas
@@ -199,8 +197,7 @@ def calcular_totales(df):
     }
 
 def calcular_contenedores(df, columnas_mapeadas, capacidad_contenedor_max):
-    # Ordenar el DataFrame por la columna 'Lote' de menor a mayor
-    df['Lote'] = pd.to_numeric(df['Lote'], errors='coerce')  # Aseguramos que la columna Lote sea numérica
+    # Ordenar el DataFrame por la columna 'Lote' de menor a mayor (manteniendo como string)
     df = df.sort_values(by='Lote')
 
     # Inicializar listas de contenedores y mensajes
@@ -261,8 +258,9 @@ def calcular_contenedores(df, columnas_mapeadas, capacidad_contenedor_max):
 
     # Validar que todas las filas hayan sido asignadas a algún contenedor
     filas_asignadas = sum(len(mensajes) for mensajes in mensajes_contenedores)
-    if filas_asignadas != total_rows:
-        print(f"⚠️ Error: Se han asignado {filas_asignadas} filas, pero el total es {total_rows}.")
+    total_filas = df.shape[0]
+    if filas_asignadas != total_filas:
+        print(f"⚠️ Error: Se han asignado {filas_asignadas} filas, pero el total es {total_filas}.")
     else:
         print("✅ Todas las filas han sido asignadas correctamente a contenedores.")
 
@@ -287,8 +285,8 @@ def mostrar_resultados(totales, contenedores_volumenes, mensajes_contenedores, d
     frame_totales.pack(fill='x', padx=20, pady=10)
 
     # Treeview para Totales
-    columns_totales = ("Descripción", "Valor")
-    tree_totales = ttk.Treeview(frame_totales, columns=columns_totales, show="headings", height=5)
+    columnas_totales = ("Descripción", "Valor")
+    tree_totales = ttk.Treeview(frame_totales, columns=columnas_totales, show="headings", height=5)
     tree_totales.heading("Descripción", text="Descripción")
     tree_totales.heading("Valor", text="Valor")
     tree_totales.column("Descripción", anchor='w', width=300)
@@ -311,8 +309,8 @@ def mostrar_resultados(totales, contenedores_volumenes, mensajes_contenedores, d
     frame_contenedores.pack(fill='both', expand=True, padx=20, pady=10)
 
     # Treeview para Contenedores
-    columns_contenedores = ("Número de Contenedor", "Peso Neto (unidades)")
-    tree_contenedores = ttk.Treeview(frame_contenedores, columns=columns_contenedores, show="headings", height=15)
+    columnas_contenedores = ("Número de Contenedor", "Peso Neto (unidades)")
+    tree_contenedores = ttk.Treeview(frame_contenedores, columns=columnas_contenedores, show="headings", height=5)
     tree_contenedores.heading("Número de Contenedor", text="Número de Contenedor")
     tree_contenedores.heading("Peso Neto (unidades)", text="Peso Neto (unidades)")
 
@@ -352,8 +350,12 @@ def mostrar_resultados(totales, contenedores_volumenes, mensajes_contenedores, d
         frame_mensajes = ttk.Frame(mensajes_ventana, padding=(20, 10))
         frame_mensajes.pack(fill='both', expand=True)
 
+        # Definir las columnas que deseas mostrar, incluyendo 'Lote'
+        columnas_mensajes = list(df_final.columns)
+        if 'Lote' not in columnas_mensajes:
+            columnas_mensajes.append('Lote')  # Añadir 'Lote' si no está presente
+
         # Treeview para Mensajes con todas las columnas
-        columnas_mensajes = list(columnas_mapeadas.keys())  # Asegúrate de que esto contenga las columnas necesarias
         tree_mensajes = ttk.Treeview(frame_mensajes, columns=columnas_mensajes, show="headings", height=15)
 
         # Definir encabezados y columnas
@@ -369,81 +371,22 @@ def mostrar_resultados(totales, contenedores_volumenes, mensajes_contenedores, d
             valores = [mensaje[col] for col in columnas_mensajes]
             tree_mensajes.insert("", "end", values=valores)
 
-        # Scrollbar para Mensajes
-        scrollbar_mensajes = ttk.Scrollbar(frame_mensajes, orient="vertical", command=tree_mensajes.yview)
-        tree_mensajes.configure(yscroll=scrollbar_mensajes.set)
-        scrollbar_mensajes.pack(side='right', fill='y')
-        tree_mensajes.pack(fill='both', expand=True)
-
-        def transferir_mensajes():
-            seleccionados = list(tree_mensajes.selection())
-            if not seleccionados:
-                messagebox.showwarning("Sin Selección", "No se ha seleccionado ningún mensaje para transferir.")
-                return
-
-            destino_num = simpledialog.askinteger(
-                "Transferir a Contenedor",
-                f"Seleccione el número del contenedor de destino (1-{len(contenedores_volumenes)})",
-                minvalue=1, maxvalue=len(contenedores_volumenes)
-            )
-
-            if destino_num is None or destino_num == contenedor_index + 1:
-                return
-
-            destino_index = destino_num - 1
-            volumen_a_transferir = 0
-            mensajes_a_transferir = []
-            mensajes_no_transferidos = []
-
-            for item in seleccionados:
-                mensaje_seleccionado_idx = mensajes_contenedores[contenedor_index][int(item)]
-                volumen_mensaje = df_final.loc[mensaje_seleccionado_idx, 'Volumen_LibrUtiliz']
-                if contenedores_volumenes[destino_index] + volumen_mensaje <= capacidad_contenedor_max:
-                    volumen_a_transferir += volumen_mensaje
-                    mensajes_a_transferir.append(mensaje_seleccionado_idx)
-                    contenedores_volumenes[destino_index] += volumen_mensaje
-                else:
-                    mensajes_no_transferidos.append(mensaje_seleccionado_idx)
-
-            # Actualizar el contenedor de origen
-            for mensaje in mensajes_a_transferir:
-                mensajes_contenedores[contenedor_index].remove(mensaje)
-                mensajes_contenedores[destino_index].append(mensaje)
-                contenedores_volumenes[contenedor_index] -= df_final.loc[mensaje, 'Volumen_LibrUtiliz']
-
-            # Mostrar advertencia si se alcanzó el límite
-            if mensajes_no_transferidos:
-                advertencia = "No se pudieron transferir los siguientes mensajes porque se alcanzó el límite de volumen del contenedor de destino:\n"
-                advertencia += "\n".join([f"{df_final.loc[m, 'Texto de mensaje']} (Nombre: {df_final.loc[m, 'Nombre']})" for m in mensajes_no_transferidos])
-                messagebox.showwarning("Advertencia", advertencia)
-
-            # Actualizar la interfaz
-            tree_mensajes.delete(*tree_mensajes.get_children())
-            for mensaje_idx in mensajes_contenedores[contenedor_index]:
-                mensaje = df_final.loc[mensaje_idx]
-                valores = [mensaje[col] for col in columnas_mensajes]
-                tree_mensajes.insert("", "end", values=valores)
-
-            # Actualizar Treeview de contenedores
-            tree_contenedores.item(selected_item, values=(f"Contenedor {contenedor_index + 1}", f"{contenedores_volumenes[contenedor_index]:,.2f}"))
-            tree_contenedores.item(destino_index, values=(f"Contenedor {destino_num}", f"{contenedores_volumenes[destino_index]:,.2f}"))
-
-            # Si un contenedor queda vacío, poner su volumen a 0
-            if len(mensajes_contenedores[contenedor_index]) == 0:
-                contenedores_volumenes[contenedor_index] = 0
-                tree_contenedores.item(selected_item, values=(f"Contenedor {contenedor_index + 1}", f"{contenedores_volumenes[contenedor_index]:,.2f}"))
-
-        # Botón para Transferir Mensajes
-        boton_transferir = ttk.Button(mensajes_ventana, text="Transferir mensajes", command=transferir_mensajes)
-        boton_transferir.pack(pady=10)
+        # Scrollbars para Mensajes
+        scrollbar_mensajes_y = ttk.Scrollbar(frame_mensajes, orient="vertical", command=tree_mensajes.yview)
+        scrollbar_mensajes_x = ttk.Scrollbar(frame_mensajes, orient="horizontal", command=tree_mensajes.xview)
+        tree_mensajes.configure(yscroll=scrollbar_mensajes_y.set, xscroll=scrollbar_mensajes_x.set)
+        scrollbar_mensajes_y.pack(side='right', fill='y')
+        scrollbar_mensajes_x.pack(side='bottom', fill='x')
+        tree_mensajes.pack(side='left', fill='both', expand=True)
 
     # Bind del evento de selección
     tree_contenedores.bind("<<TreeviewSelect>>", on_select)
 
     # Botón para Exportar a Excel
     boton_exportar = ttk.Button(root, text="Exportar a Excel", command=lambda: exportar_a_excel(
-        contenedores_volumenes, mensajes_contenedores, df_final, columnas_mapeadas, capacidad_contenedor_max
+        contenedores_volumenes, mensajes_contenedores, df_final, columnas_mapeadas
     ))
+
     boton_exportar.pack(pady=10)
 
     # Verificación de integridad antes de iniciar el loop
@@ -458,27 +401,32 @@ def mostrar_resultados(totales, contenedores_volumenes, mensajes_contenedores, d
     root.mainloop()
 
 def main_proceso(df_final, columnas_mapeadas, capacidad_contenedor_max):
-    # Verificar que 'Nombre' y 'Texto de mensaje' estén presentes
-    required_columns = ['Nombre', 'Texto de mensaje', 'Bruto', 'Neto', 'Volumen', 'Importe', 'LibrUtiliz', 'Contador']
-    for col in required_columns:
-        if col not in df_final.columns:
-            messagebox.showerror("Error", f"La columna '{col}' no está presente en los datos.")
-            print(f"❌ Error: La columna '{col}' no está presente en los datos.")
-            return
+    try:
+        # Verificar que las columnas requeridas estén presentes
+        required_columns = ['Material', 'Texto de mensaje', 'Bruto', 'Neto', 'Volumen', 'Importe',
+                            'LibrUtiliz', 'Contador', 'Cliente', 'Nombre', 'Doc.comer.', 'Grupo', 'Lote']
+        for col in required_columns:
+            if col not in df_final.columns:
+                messagebox.showerror("Error", f"La columna '{col}' no está presente en los datos.")
+                print(f"❌ Error: La columna '{col}' no está presente en los datos.")
+                return
 
-    # Rellenar valores nulos en la columna 'Nombre' si es necesario
-    df_final['Nombre'] = df_final['Nombre'].fillna('Sin Nombre')
+        # Rellenar valores nulos en la columna 'Nombre' si es necesario
+        df_final['Nombre'] = df_final['Nombre'].fillna('Sin Nombre')
 
-    # Calcular contenedores
-    contenedores_volumenes, mensajes_contenedores = calcular_contenedores(df_final, columnas_mapeadas, capacidad_contenedor_max)
+        # Calcular contenedores
+        contenedores_volumenes, mensajes_contenedores = calcular_contenedores(df_final, columnas_mapeadas, capacidad_contenedor_max)
 
-    # Calcular totales
-    totales = calcular_totales(df_final)
+        # Calcular totales
+        totales = calcular_totales(df_final)
 
-    # Mostrar resultados
-    mostrar_resultados(
-        totales, contenedores_volumenes, mensajes_contenedores, df_final, columnas_mapeadas, capacidad_contenedor_max
-    )
+        # Mostrar resultados
+        mostrar_resultados(
+            totales, contenedores_volumenes, mensajes_contenedores, df_final, columnas_mapeadas, capacidad_contenedor_max
+        )
+    except Exception as e:
+        messagebox.showerror("Error", f"Error en el proceso principal: {e}")
+        print(f"❌ Error en el proceso principal: {e}")
 
 def cargar_datos(ruta_archivo):
     try:
@@ -490,49 +438,52 @@ def cargar_datos(ruta_archivo):
         print(f"❌ Error al cargar el archivo: {e}")
         return None
 
+# Si deseas mantener una función main en operaciones.py, asegúrate de que esté completa.
 def main():
-    # Crear la ventana principal para seleccionar el archivo de datos
-    root = tk.Tk()
-    root.withdraw()  # Ocultar la ventana principal
+    try:
+        # Crear la ventana principal para seleccionar el archivo de datos
+        root = tk.Tk()
+        root.withdraw()  # Ocultar la ventana principal
 
-    messagebox.showinfo("Seleccionar Archivo", "Seleccione el archivo Excel que contiene los datos.")
+        messagebox.showinfo("Seleccionar Archivo", "Seleccione el archivo Excel que contiene los datos.")
 
-    ruta_archivo = filedialog.askopenfilename(
-        title="Seleccionar archivo Excel",
-        filetypes=[("Archivos de Excel", "*.xlsx *.xls")]
-    )
+        ruta_archivo = filedialog.askopenfilename(
+            title="Seleccionar archivo Excel",
+            filetypes=[("Archivos de Excel", "*.xlsx *.xls")]
+        )
 
-    if not ruta_archivo:
-        messagebox.showwarning("Sin Selección", "No se ha seleccionado ningún archivo. El programa se cerrará.")
-        print("⚠️ No se ha seleccionado ningún archivo. El programa se cerrará.")
-        return
+        if not ruta_archivo:
+            messagebox.showwarning("Sin Selección", "No se ha seleccionado ningún archivo. El programa se cerrará.")
+            print("⚠️ No se ha seleccionado ningún archivo. El programa se cerrará.")
+            return
 
-    df_final = cargar_datos(ruta_archivo)
-    if df_final is None:
-        return
+        df_final = cargar_datos(ruta_archivo)
+        if df_final is None:
+            return
 
-    # Definir las columnas mapeadas si es necesario (ejemplo)
-    columnas_mapeadas = {
-    'Bruto': 'Peso bruto (kg)',
-    'Neto': 'Peso neto (kg)',
-    'Volumen': 'Volumen (m3)',
-    'Importe': 'Valor FOB',
-    'Doc.comer.': 'Pedido',
-    'LibrUtiliz': 'Cajas',
-    'Total peso Bruto': 'Total peso Bruto (kg)',
-    'Total peso Neto': 'Total peso Neto (kg)',
-    'Total Volumen': 'Total volumen',
-    'Total Importe': 'Ventas totales FOB',
-    'Total LibrUtiliz': 'Total Cajas'
-    }
+        # Definir las columnas mapeadas si es necesario (ejemplo)
+        columnas_mapeadas = {
+            'Bruto': 'Peso bruto (kg)',
+            'Neto': 'Peso neto (kg)',
+            'Volumen': 'Volumen (m3)',
+            'Importe': 'Valor FOB',
+            'Doc.comer.': 'Pedido',
+            'LibrUtiliz': 'Cajas',
+            'Total peso Bruto': 'Total peso Bruto (kg)',
+            'Total peso Neto': 'Total peso Neto (kg)',
+            'Total Volumen': 'Total volumen',
+            'Total Importe': 'Ventas totales FOB',
+            'Total LibrUtiliz': 'Total Cajas'
+        }
 
-    # Definir la capacidad máxima del contenedor (ejemplo)
-    capacidad_contenedor_max = 1000  # Ajusta este valor según tus necesidades
+        # Definir la capacidad máxima del contenedor (ejemplo)
+        capacidad_contenedor_max = 1000  # Ajusta este valor según tus necesidades
 
-    # Llamar a la función principal de procesamiento
-    main_proceso(df_final, columnas_mapeadas, capacidad_contenedor_max)
+        # Llamar a la función principal de procesamiento
+        main_proceso(df_final, columnas_mapeadas, capacidad_contenedor_max)
+    except Exception as e:
+        messagebox.showerror("Error", f"Error en la función main: {e}")
+        print(f"❌ Error en la función main: {e}")
 
 if __name__ == "__main__":
     main()
-
-# ajsjdasdsdaasadadsaasa

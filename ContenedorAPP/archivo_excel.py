@@ -74,60 +74,6 @@ def mostrar_resultados(totales, contenedores, mensajes_contenedores, df_filtrado
         for mensaje in mensajes_contenedores[contenedor_index]:
             mensajes_listbox.insert(tk.END, mensaje)
 
-        def transferir_mensajes():
-            seleccionados = list(mensajes_listbox.curselection())
-            if not seleccionados:
-                return
-
-            destino_index = tk.simpledialog.askinteger(
-                "Transferir a Contenedor",
-                f"Seleccione el número del contenedor de destino (1-{len(contenedores)})",
-                minvalue=1, maxvalue=len(contenedores)
-            )
-
-            if destino_index is None or destino_index == contenedor_index + 1:
-                return
-
-            destino_index -= 1
-            peso_a_transferir = 0
-            mensajes_a_transferir = []
-            mensajes_no_transferidos = []
-
-            # Asumimos que cada mensaje tiene un peso específico
-            for i in seleccionados:
-                mensaje_seleccionado = mensajes_contenedores[contenedor_index][i]
-                peso_mensaje = df_filtrado.loc[df_filtrado[columnas_mapeadas['Texto de mensaje']] == mensaje_seleccionado, 'Neto'].values[0]
-                if contenedores[destino_index] + peso_mensaje <= 71.5:
-                    peso_a_transferir += peso_mensaje
-                    mensajes_a_transferir.append(mensaje_seleccionado)
-                    contenedores[destino_index] += peso_mensaje
-                else:
-                    mensajes_no_transferidos.append(mensaje_seleccionado)
-
-            # Actualizar el contenedor de origen
-            for mensaje in mensajes_a_transferir:
-                mensajes_contenedores[contenedor_index].remove(mensaje)
-                mensajes_contenedores[destino_index].append(mensaje)
-                contenedores[contenedor_index] -= df_filtrado.loc[df_filtrado[columnas_mapeadas['Texto de mensaje']] == mensaje, 'Neto'].values[0]
-
-            # Mostrar advertencia si se alcanzó el límite
-            if mensajes_no_transferidos:
-                advertencia = f"No se pudieron transferir los siguientes mensajes porque se alcanzó el límite de peso del contenedor de destino:\n{', '.join(map(str, mensajes_no_transferidos))}"
-                messagebox.showwarning("Advertencia", advertencia)
-
-            # Actualizar la interfaz
-            mensajes_listbox.delete(0, tk.END)
-            for mensaje in mensajes_contenedores[contenedor_index]:
-                mensajes_listbox.insert(tk.END, mensaje)
-
-            tree.item(selected_item, values=(f"Contenedor {contenedor_index + 1}: {contenedores[contenedor_index]:.2f} unidades de peso neto",))
-            tree.item(destino_index, values=(f"Contenedor {destino_index + 1}: {contenedores[destino_index]:.2f} unidades de peso neto",))
-
-            if len(mensajes_contenedores[contenedor_index]) == 0:
-                contenedores[contenedor_index] = 0
-
-        tk.Button(mensajes_ventana, text="Transferir mensajes", command=transferir_mensajes).pack(pady=10)
-
     tree.bind("<<TreeviewSelect>>", on_select)
 
     tk.Button(root, text="Exportar a Excel", command=lambda: exportar_a_excel(

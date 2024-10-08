@@ -278,7 +278,7 @@ class Interfaz:
         df_subido = df_subido[df_subido['Grupo'].isin(grupos_seleccionados)]
 
         # Modificar 'Lote' para el grupo GCFOODS
-        df_subido.loc[df_subido['Grupo'] == 'GCFOODS', 'Lote'] = (
+        df_subido.loc[df_subido['Grupo'] =='GCFOODS', 'Lote'] = (
             '20' + df_subido.loc[df_subido['Grupo'] == 'GCFOODS', 'Lote'].astype(str)
         )
 
@@ -338,7 +338,7 @@ class Interfaz:
         # Crear una nueva ventana para seleccionar el tipo de contenedor
         contenedor_window = tk.Toplevel(self.root)
         contenedor_window.title("Seleccionar Tipo de Contenedor")
-        contenedor_window.geometry("450x350")
+        contenedor_window.geometry("450x400")
         contenedor_window.configure(bg="#f0f0f0")
 
         # Estilos
@@ -373,7 +373,14 @@ class Interfaz:
                 self.capacidad_contenedor.set(67.4)
             elif seleccion == '40 high':
                 self.capacidad_contenedor.set(76.4)
-            elif seleccion == 'Otro':
+            elif seleccion == 'Sencillo':
+                # Pedir al usuario que ingrese la capacidad
+                capacidad = simpledialog.askfloat(
+                    "Capacidad del Contenedor",
+                    "Ingrese la capacidad máxima del contenedor:",
+                    minvalue=0.1
+                )
+            elif seleccion == 'Tracto Camión':
                 # Pedir al usuario que ingrese la capacidad
                 capacidad = simpledialog.askfloat(
                     "Capacidad del Contenedor",
@@ -388,7 +395,7 @@ class Interfaz:
                 self.capacidad_contenedor.set(0)
 
         # Opciones de contenedores con Radiobuttons estilizados
-        opciones = ['20ft', '40ft', '40 high', 'Otro']
+        opciones = ['20ft', '40ft', '40 high', 'Sencillo','Tracto Camión']
         for opcion in opciones:
             ttk.Radiobutton(
                 contenedor_window,
